@@ -13,6 +13,15 @@ from utils.hotkey_manager import Hotkey_Manager
 from utils.message_parsing import SubscriptionMessage
 
 
+
+#########################################################################################################
+###############  Primarily used for integration with rain world via the Dev Console mod.  ###############
+###############                                                                           ###############
+###############      Requires manual updating for different game types. No default.       ###############
+#########################################################################################################
+
+
+
 class Reward_Titles(Enum):
 
     SNAILS = "SNAILS!!!"
@@ -57,7 +66,7 @@ class Rain_World_Manager():
         
 
     # Args for this function are generic and can be used according to the specific command messages desired.
-    def _handle_chat_message(self, user:str, text:str) -> None:
+    def _handle_chat_message(self, user:"str", text:"str") -> None:
         
         # Normalizes username to lowercase and removes punctuation for flexible command matching.
         text = str.lower(text)
@@ -89,7 +98,7 @@ class Rain_World_Manager():
 
 
     # Args for this function are generic and can be used according to the specific rewards being used.
-    async def _handle_point_reward(self, user:str, reward:str, text:str) -> None:
+    async def _handle_point_reward(self, user:"str", reward:"str", text:"str") -> None:
 
 
         # Pausing prevents rewards from occurring.
@@ -146,7 +155,7 @@ class Rain_World_Manager():
 
 
     # Movement vectors are changed according to xmod and ymod. Called by most chat message commands.
-    def _change_vectors(self, xmod:int, ymod:int) -> None:
+    def _change_vectors(self, xmod:"int", ymod:"int") -> None:
         
         mod = [xmod,ymod]
 
@@ -166,7 +175,7 @@ class Rain_World_Manager():
 
 
     # Mouse is moved at a smoothed rate.
-    def _move_mouse(self, x:int, y:int) -> None:
+    def _move_mouse(self, x:"int", y:"int") -> None:
         pydirectinput.moveRel(x, y, duration = 0.02)
 
         # Clamps cursor location to within primary monitor.

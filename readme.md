@@ -36,7 +36,9 @@ On your first time running the code, it will build a config file with informatio
 
 If you want to replace the config file, open config.py the same way or just delete the config.ini file and run the program again.
 
-Otherwise, have fun using the code!
+After your config file is set up, you can select the different modules you're going to use. Once they're selected, the program will inform you of the hotkeys you have available and begin listening for events from the twitch channel given in the config (your user login). For more details about specific modules, look at the start of the python files in stream_modules and audio_modules.
+
+Have fun streaming!
 
 
 #### Additional information and acknowledgements:

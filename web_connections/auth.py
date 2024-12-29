@@ -1,13 +1,9 @@
 import requests
 import secrets
-from urllib.parse import urldefrag
 from urllib.parse import urlsplit
 from urllib.parse import parse_qsl
 import webbrowser
-from config import get_config
-
-# Used for function annotation. Not required at runtime.
-from auth import Auth
+from utils.config import get_config
 
 
 ######### General Variables #########
@@ -21,7 +17,7 @@ OAUTH_CODE = None
 
 ######### Public Functions #########
 
-def get_auth() -> Auth:
+def get_auth() -> "Auth":
     state = _get_auth_code()
     OAUTH_CODE = _extract_oauth_code(state)
 
@@ -68,6 +64,7 @@ class Auth(object):
             self.access_token = res_body['access_token']
             self._refresh_token = res_body['refresh_token']
 
+
     def get_bearer_token(self) -> str:
         return "Bearer " + str(self.access_token)
     
@@ -88,7 +85,7 @@ def _get_auth_code() -> str:
     return authorization_dict.get('state')
 
 
-def _extract_oauth_code(state) -> str:
+def _extract_oauth_code(state:"str") -> str:
 
     res_dict = {}
     while res_dict == {}:

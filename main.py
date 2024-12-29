@@ -26,7 +26,7 @@ class MSG_TYPE(Enum):
 ######### Private Functions #########
 
 class Integration(object):
-    def __init__(self, module_list:list):
+    def __init__(self, module_list:"list"):
         # Initializes websocket connection.
         auth = get_auth()
         self.http_requests = HTTP_Requests(auth)
@@ -67,6 +67,8 @@ class Integration(object):
             tasks.add(connection_task)
             connection_task.add_done_callback(tasks.discard)
 
+        exit()
+
 
     # Monitors for a key combination of shift + enter + backspace to close the program. Cannot be called directly from create_hotkey due to async functions within it.
     async def background_loop(self) -> None:
@@ -99,7 +101,6 @@ class Integration(object):
 
         print("All tasks should be terminated now. Closing program.")
 
-        exit()
 
 
 
@@ -107,7 +108,7 @@ class Integration(object):
     # Should only be added to handler lists.
 
     # Sorts parsed messages from the websocket connection based on type.
-    async def message_handler(self, msg:Message) -> None:
+    async def message_handler(self, msg:"Message") -> None:
 
         # Primary message type received from 
         if msg.message_type() == MSG_TYPE.NOTIFICATION.value:

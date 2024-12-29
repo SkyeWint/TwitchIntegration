@@ -5,7 +5,7 @@ import asyncio
 from syllables import estimate as estimate_syllables
 from enum import Enum
 
-from config import get_config
+from utils.config import get_config
 
 # TTS generators
 from gtts import gTTS
@@ -14,14 +14,15 @@ import pyttsx3
 # Used for function annotation. Not required at runtime.
 from utils.hotkey_manager import Hotkey_Manager
 from utils.message_parsing import SubscriptionMessage
-from audio_player import Audio_Manager
+from audio_modules.audio_player import Audio_Manager
 
 
 ######### Enum List #########
 
+
 class Reward_Titles(Enum):
 
-    NORMAL_TTS = get_config("STREAM INFO").get("login_name")
+    NORMAL_TTS = get_config("STREAM INFO").get("tts_reward_title")
 
 
 
@@ -49,7 +50,7 @@ class TTS_Manager(object):
         hotkey_manager.create_hotkey("Stop TTS Button", "right shift+backspace", self._skip_current_TTS)
 
         # Used for generating files.
-        self._file_path_base = ".\\sound_effects\\"
+        self._file_path_base = ".\\audio_modules\\sound_effects\\"
 
         self._TTS_queue = queue.Queue(0)
         self._TTS_parts = []
@@ -62,7 +63,7 @@ class TTS_Manager(object):
 
 
     # Args for this function are generic and can be used according to the specific rewards being used.
-    async def _handle_point_reward(self, user:str, reward:str, text:str) -> None:
+    async def _handle_point_reward(self, user:"str", reward:"str", text:"str") -> None:
         
 
         # TTS messages are only placed on the queue. update() constantly awaits the next TTS message.
@@ -81,9 +82,12 @@ class TTS_Manager(object):
                 text = self._TTS_queue.get(timeout = 0.02)
             except queue.Empty:
                 if not self._running:
+                    print("No longer listening to TTS message.")
                     return
+                print("No TTS messages detected.")
                 await asyncio.sleep(1)
             else:
+                print("TTS message detected.")
                 break
 
         # Adjusts rate according to remaining messages in queue as well as length of message. Only for pyTTS audio.
@@ -101,7 +105,7 @@ class TTS_Manager(object):
 
     # Generates a series of TTS files based on the list of TTS parts held by the TTS_Manager object. Returns a list of file paths to the generated TTS files.
     # TTS files are generated with an index after them in the format: [path\speech1.ext, path\speech2.ext, path\speech3.ext, etc]
-    async def _generate_TTS_parts(self, pyTTS_rate:int) -> list:
+    async def _generate_TTS_parts(self, pyTTS_rate:"int") -> list:
         
         TTS_path_list = []
 
@@ -208,7 +212,7 @@ class TTS_Manager(object):
     ##### Public functions
 
     # Generates TTS file using google voice.
-    def generate_gTTS(self, text:str, slow:bool = False, filename:str = "speech", TTS_fragment_index:"int" = 1) -> str:
+    def generate_gTTS(self, text:"str", slow:"bool" = False, filename:"str" = "speech", TTS_fragment_index:"int" = 1) -> str:
         file_path = self._file_path_base + filename + str(TTS_fragment_index) + ".mp3"
 
         speech = gTTS(text = text, lang = "en", slow = False)
@@ -220,7 +224,7 @@ class TTS_Manager(object):
 
 
     # Generates TTS file using pyTTS voices. Voices are male or female by default and selected using a random int.
-    def generate_pyTTS(self, text:str, voice:int = random.randint(0,1), rate:int = 200, filename:str = "speech", TTS_fragment_index:"int" = 1) -> str:
+    def generate_pyTTS(self, text:"str", voice:"int" = random.randint(0,1), rate:"int" = 200, filename:"str" = "speech", TTS_fragment_index:"int" = 1) -> str:
         file_path = self._file_path_base + filename + str(TTS_fragment_index) + ".wav"
 
         pyTTS_voices = self._pyTTS.getProperty('voices')
@@ -238,8 +242,10 @@ class TTS_Manager(object):
     # Async handling functions & termination functions.
 
     async def terminate_module(self) -> None:
+
         self._running = False
         self._TTS_queue.shutdown(immediate = True)
+        self._audio_player.skip_TTS()
     
 
     async def update(self) -> None:

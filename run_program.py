@@ -1,13 +1,13 @@
 import time
 import random
 
-from config import validate_config_file
+from utils.config import validate_config_file
 from utils.hotkey_manager import Hotkey_Manager
 from stream_modules.stream_minigolf import Minigolf_Manager
 from stream_modules.stream_rainworld import Rain_World_Manager
-from stream_modules.audio_player import Audio_Manager
-from stream_modules.stream_sound_effects import Sound_Manager
-from stream_modules.stream_TTS import TTS_Manager
+from audio_modules.audio_player import Audio_Manager
+from audio_modules.stream_sound_effects import Sound_Manager
+from audio_modules.stream_TTS import TTS_Manager
 from main import Integration
 
 
@@ -44,7 +44,6 @@ def get_module_list() -> list:
 
     try:
         selection = int(input()) - 2
-        print(selection)
         match game_options[selection]:
             case "Rain World":
                 module_list.append(Rain_World_Manager(hotkey_manager))
@@ -54,6 +53,20 @@ def get_module_list() -> list:
 
     except:
         print("\nNo game selected.\n")
+
+    # Prints all relevant hotkeys to the session.
+    print("Hotkeys are: ")
+    print('{:<15}  |  {:<25}'.format("End Program","shift+enter+backspace"))
+
+    for k, v in hotkey_manager.get_hotkey_dict().items():
+        print('{:<15}  |  {:<25}'.format(k,v))
+
+    try:
+        test = game_options[selection]
+        print("Right Shift + P            |  Pause game updates & commands/rewards.")
+    except:
+        pass
+
     
     return module_list
 

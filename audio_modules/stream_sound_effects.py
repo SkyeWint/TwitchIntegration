@@ -3,7 +3,7 @@ import string
 import random
 
 # Used for function annotation. Not required at runtime.
-from audio_player import Audio_Manager
+from audio_modules.audio_player import Audio_Manager
 from utils.message_parsing import SubscriptionMessage
 
 
@@ -14,7 +14,7 @@ class Sound_Manager(object):
         self._audio_player = audio_player
 
         # Creates dictionary of available commands as well as values to identify conditions for gameplay.
-        self._last_command = None
+        self._last_message = None
 
         self._chat_commands = {}
 
@@ -23,7 +23,7 @@ class Sound_Manager(object):
 
 
     # Args for this function are generic and can be used according to the specific command messages desired.
-    def _handle_chat_message(self, user:str, text:str) -> None:
+    def _handle_chat_message(self, user:"str", text:"str") -> None:
         
         # Normalizes username to lowercase and removes punctuation for flexible command matching.
         text = str.lower(text)
@@ -32,24 +32,23 @@ class Sound_Manager(object):
         match self._chat_commands.get(text): 
 
             case "meow":
-                if self._chat_commands.get(text) != self._chat_commands.get(self._last_command):
+                if self._chat_commands.get(text) != self._chat_commands.get(self._last_message):
                     meow = self._construct_filepath("meow", variations=17)
                     self._audio_player.play_sound(meow)
 
             case "bonk":
-                if self._chat_commands.get(text) != self._chat_commands.get(self._last_command):
+                if self._chat_commands.get(text) != self._chat_commands.get(self._last_message):
                     bonk = self._construct_filepath("bonk")
                     self._audio_player.play_sound(bonk)
 
-                    
-        if text in self._chat_commands.keys():
-            self._last_command = self._chat_commands.get(text)
+        
+        self._last_message = text
     
 
     # Verifies that a .ogg or .wav file exists based on a given sound name. Ogg files are always prioritized over Wav files.
     # A number of variations can be provided to check a list of files in the sound_effects\ folder, with each file in the list following the format: [name][index][filetype].
-    def _construct_filepath(self, sound_name:str, variations:int = 1) -> str:
-        file_path_base = ".\\sound_effects\\"
+    def _construct_filepath(self, sound_name:"str", variations:"int" = 1) -> str:
+        file_path_base = ".\\audio_modules\\sound_effects\\"
 
         if variations > 1:
             variation_list = []

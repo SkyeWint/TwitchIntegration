@@ -124,7 +124,7 @@ MOUSE_WHEEL_DOWN = 0x109
 # Use these to prevent conflict errors with pynput.
 SendInput = ctypes.windll.user32.SendInput
 
-def hold_key(hexKeyCode):
+def hold_key(hexKeyCode) -> None:
     extra = ctypes.c_ulong(0)
     ii_ = pynput._util.win32.INPUT_union()
     ii_.ki = pynput._util.win32.KEYBDINPUT(0, hexKeyCode, 0x0008, 0, ctypes.cast(ctypes.pointer(extra), ctypes.c_void_p))
@@ -139,7 +139,7 @@ def release_key(hexKeyCode):
     SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
 
 # Holds down a key for the specified number of seconds
-def hold_and_release_key(hexKeyCode, seconds):
+def hold_and_release_key(hexKeyCode, seconds:float):
     hold_key(hexKeyCode)
     time.sleep(seconds)
     release_key(hexKeyCode)

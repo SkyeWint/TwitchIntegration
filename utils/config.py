@@ -4,14 +4,19 @@ import time
 import random
 
 
+#CONFIG_FILENAME = os.path.join(os.pardir, 'config.ini')
 CONFIG_FILENAME = 'config.ini'
 
 
 # Gets a specific section of the config file.
-def get_config(section:str) -> dict:
+def get_config(section:"str") -> dict:
     config = configparser.ConfigParser()
     config.read(CONFIG_FILENAME)
-    return dict(config.items(section))
+    try:
+        return dict(config.items(section))
+    except:
+        print("\n!! Config file invalid !!\n")
+        generate_config()
 
 
 # Verifies if config.ini is present in the program folder and that it has the fields necessary.
@@ -40,11 +45,7 @@ def validate_config_file() -> None:
         
         print("Validating section keys...")
         time.sleep(random.uniform(0.2,0.6))
-        
-        # Replace section headers in list with their corresponding section dicts.
-        for i, section in enumerate(sections):
-            sections[i] = dict(config.items(section))
-        
+
         # Defining required keys and any required values.
         placeholder_sections = [
                 {
@@ -64,12 +65,15 @@ def validate_config_file() -> None:
 
                 {
                 "login_name": None,
-                "TTS_reward_title": None
+                "tts_reward_title": None
                 }
             ]
         
-        # Validating section keys.
-        for i in len(sections):
+        
+        # Replace section headers in list with their corresponding section dicts, then validate section keys.
+        for i, section in enumerate(sections):
+            sections[i] = dict(config.items(section))
+            
             if sections[i].keys() != placeholder_sections[i].keys():
                 raise Exception("Keys incorrect.")
             for k, v in sections[i].items():
@@ -87,7 +91,7 @@ def validate_config_file() -> None:
 # Generates new config file if there are any issues with the existing config file.
 def generate_config() -> None:
 
-    print("Generating new config file.")
+    print("Generating new config file...")
 
     print("\nPlease input your application Client ID from https://dev.twitch.tv/console.")
     id = input()
@@ -99,7 +103,7 @@ def generate_config() -> None:
     login_name = input()
 
     print('\nIf you plan to use the Text To Speech part of this code, please input the title of your TTS point redemption.')
-    TTS_reward_title = input()
+    tts_reward_title = input()
 
     print('\nPlease input your application Redirect URI from https://dev.twitch.tv/console.')
     print('Press Enter without any input for the default of http://localhost/.')
@@ -142,13 +146,15 @@ def generate_config() -> None:
 
     config['STREAM INFO'] = {
         'login_name': login_name,
-        'TTS_reward_title': TTS_reward_title
+        'tts_reward_title': tts_reward_title
         }
 
     with open(CONFIG_FILENAME, 'w') as configFile:
         config.write(configFile)
 
-    print("\nconfig.ini has been generated.")
+    print("\nconfig.ini has been generated. Press Enter to close the program.")
+    input()
+    exit()
 
 
 if __name__ == "__main__":

@@ -12,6 +12,15 @@ from utils.message_parsing import SubscriptionMessage
 
 
 
+##############################################################################################
+###############  Used for chat-controlled gameplay of minigolf games.          ###############
+###############  Designed for the games "Golf With Friends" and "Golf It!"     ###############
+###############  User should use the pause hotkey when it is not the chat's    ###############
+###############  turn and not alt-tab out of the game during the chat's turn.  ###############
+##############################################################################################
+
+
+
 class Minigolf_Manager():
     def __init__(self, hotkey_manager:"Hotkey_Manager") -> None:
         
@@ -65,7 +74,7 @@ class Minigolf_Manager():
     
 
     # Args for this function are generic and can be used according to the specific command messages desired.
-    def _handle_chat_message(self, user:str, text:str):
+    def _handle_chat_message(self, user:"str", text:"str"):
         
         # Normalizes username to lowercase and removes punctuation for flexible command matching.
         text = str.lower(text)
@@ -157,7 +166,7 @@ class Minigolf_Manager():
     ### In-game control functions, do not call from outside the class
 
     # Movement vectors are changed according to xmod and ymod. Called by most chat message commands.
-    def _change_vectors(self, xmod:int, ymod:int) -> None:
+    def _change_vectors(self, xmod:"int", ymod:"int") -> None:
         
         mod = [xmod, ymod]
 
@@ -181,13 +190,13 @@ class Minigolf_Manager():
 
 
     # Moves the mouse slightly after stopping constant movement.
-    def _slight_movement(self, x:int, y:int):
+    def _slight_movement(self, x:"int", y:"int"):
         self._reset_vectors()
         self._move_mouse(x, y)
 
 
     # Mouse is moved at a smoothed rate.
-    def _move_mouse(self, x:int, y:int) -> None:
+    def _move_mouse(self, x:"int", y:"int") -> None:
 
         # Increasing power is disabled if the power quantity exceeds the limit because dear god was that excessive in Golf It last time.
         if self._power_total >= self._power_limit and y > 0:
@@ -202,13 +211,13 @@ class Minigolf_Manager():
 
 
 
-    def _lock_in_aim(self):
+    def _lock_in_aim(self) -> None:
         self._reset_vectors()
         pydirectinput.mouseDown()
         self._aiming = False
 
 
-    def _go_back_to_aiming(self):
+    def _go_back_to_aiming(self) -> None:
         self._reset_vectors()
         pydirectinput.moveRel(0, -5000, relative = True)
         pydirectinput.rightClick()
@@ -216,7 +225,7 @@ class Minigolf_Manager():
         self._aiming = True
 
 
-    def _fire(self):
+    def _fire(self) -> None:
         self._reset_vectors()
         pydirectinput.mouseUp()
         self._aiming = True

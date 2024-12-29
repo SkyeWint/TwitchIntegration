@@ -5,13 +5,13 @@ from enum import Enum
 import websockets
 from websockets.asyncio.client import connect
 
-from config import get_config
+from utils.config import get_config
 from utils.message_parsing import parse_message
-from subscriptions import Subscription_Data
-from subscriptions import RequestType
+from web_connections.subscriptions import Subscription_Data
+from web_connections.subscriptions import RequestType
 
 # Used for function annotation. Not required at runtime.
-from auth import Auth
+from web_connections.auth import Auth
 
 
 
@@ -28,10 +28,10 @@ class _TWITCH_URI(Enum):
 ##### Websocket_Connection handles listening to the websocket connection to Twitch as well as handling the initial subscriptions to 
 
 class Websocket_Connection(object):
-    def __init__(self, http_requests) -> None:
+    def __init__(self, http_requests:"HTTP_Requests") -> None:
 
         # See the HTTP_Requests class in this module for details.
-        self._http_requests = HTTP_Requests()
+        self._http_requests = http_requests
 
         # Functions to deal with incoming websocket messages are assigned to this list.
         self._message_handlers = []
@@ -40,6 +40,7 @@ class Websocket_Connection(object):
         self._running = True
         self._reconnect_on_disconnection = True
         self._connection_closed = False
+        self._timeout_limit = time.monotonic()
 
 
     ##### Connection-related functions
@@ -121,7 +122,7 @@ class Websocket_Connection(object):
 
     # Adds a function to the message handler list. Functions used as arguments MUST take Message or SubscriptionMessage objects as arguments. 
     # See message_parsing.py for details about Message and SubscriptionMessage objects.
-    def add_message_handler(self, handler_function:function) -> None:
+    def add_message_handler(self, handler_function:"function") -> None:
         self._message_handlers.append(handler_function)
     
 
@@ -149,14 +150,14 @@ class Websocket_Connection(object):
 ##### HTTP_Requests handles all HTTP requests for 
 
 class HTTP_Requests(object):
-    def __init__(self, auth:Auth) -> None:
+    def __init__(self, auth:"Auth") -> None:
 
         # Auth is stored in init and kept for get_http_request_headers() as it should only be acquired once per program runtime. See auth.py for details about the Auth object.
         self._auth = auth
 
 
     # Generic function for headers of all http requests sent to twitch URIs. Returns dict, needs to be submitted to http requests as **kwargs instead of being passed directly.
-    def get_http_request_headers(self, incl_content_type = False) -> dict:
+    def get_http_request_headers(self, incl_content_type:"bool" = False) -> dict:
 
         if incl_content_type:
             return {'Authorization': self._auth.get_bearer_token(),
@@ -171,7 +172,7 @@ class HTTP_Requests(object):
 
 
     # Generic function to obtain a twitch user's ID number based on their login username - i.e. what is used to log into Twitch, also displayed on a streamer's channel.
-    def get_user_id(self, username:str) -> str:
+    def get_user_id(self, username:"str") -> str:
 
         res = requests.get(f"{_TWITCH_URI.USERS.value}?login={username}", headers=self.get_http_request_headers())
         
@@ -183,7 +184,7 @@ class HTTP_Requests(object):
 
 
     # Generic function to subscribe to a Twitch EventSub. Necessary in order to receive event notifications for the specified subscription type.
-    def subscribe_to_event(self, subscription_data:Subscription_Data, sub_type:str) -> None:
+    def subscribe_to_event(self, subscription_data:"Subscription_Data", sub_type:"str") -> None:
 
         res = requests.post(_TWITCH_URI.SUBSCRIPTION.value, headers={
                 **self.get_http_request_headers(incl_content_type = True),

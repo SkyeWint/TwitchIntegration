@@ -19,7 +19,7 @@ class RequestType(Enum):
 ######### Public Functions #########
 
 class Subscription_Data():
-    def __init__(self, session_id:str, broadcast_user_id:str) -> None:
+    def __init__(self, session_id:"str", broadcast_user_id:"str") -> None:
         self.bodyBase = {
             'version': '1',
             'transport': {
@@ -74,7 +74,7 @@ class Subscription_Data():
         }
 
 
-    def get_subscription_data(self, requestType:str) -> dict:
+    def get_subscription_data(self, requestType:"str") -> dict:
         return {
             'type': self.requestParams[requestType]['type'],
             'version': self.bodyBase['version'],

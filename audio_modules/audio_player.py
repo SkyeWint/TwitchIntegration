@@ -24,7 +24,7 @@ class Audio_Manager():
         self._audio_file_exts = [".wav", ".ogg"]
     
     # Converts the given .mp3 into a .wav file
-    def _convert_mp3_to_wav(self, file_path) -> str:
+    def _convert_mp3_to_wav(self, file_path:"str") -> str:
 
         if os.path.isfile(file_path) and file_path[-4:] == ".mp3":
             pass
@@ -38,7 +38,7 @@ class Audio_Manager():
         return file_path[:-4] + ".wav"
 
     # Plays a sound with the given file path.
-    def play_sound(self, file_path) -> None:
+    def play_sound(self, file_path:"str") -> None:
     
 
         if os.path.isfile(file_path) and file_path[-4:] in self._audio_file_exts:
@@ -57,7 +57,7 @@ class Audio_Manager():
 
 
     # This function is awaited until TTS is no longer playing, in order to allow deletion of TTS file after playing.
-    async def play_TTS(self, file_path) -> None:
+    async def play_TTS(self, file_path:"str") -> None:
 
 
         if os.path.isfile(file_path) and file_path[-4:] in self._audio_file_exts:
@@ -85,7 +85,7 @@ class Audio_Manager():
         return
     
     # Skips the current TTS message being played.
-    def skip_TTS(self):
+    def skip_TTS(self) -> None:
         self._TTS_channel.stop()
 
     # Closes tkinter window properly. 
