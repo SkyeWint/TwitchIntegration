@@ -84,10 +84,9 @@ class TTS_Manager(object):
                 if not self._running:
                     print("No longer listening to TTS message.")
                     return
-                print("No TTS messages detected.")
                 await asyncio.sleep(1)
             else:
-                print("TTS message detected.")
+                print(f"TTS message detected: {text}")
                 break
 
         # Adjusts rate according to remaining messages in queue as well as length of message. Only for pyTTS audio.

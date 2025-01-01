@@ -27,6 +27,7 @@ class Reward_Titles(Enum):
     SNAILS = "SNAILS!!!"
     DIRECT_SPAWN = "Spawn Lock-on"
     DOUBLE_SPAWN = "Double Spawn Rate"
+    TRAIN_SPAWN = "CHOO CHOO"
 
 
 
@@ -46,6 +47,7 @@ class Rain_World_Manager():
         # Sets up ability to pause without closing the function.
         self._paused = False
         hotkey_manager.create_hotkey("Pause Button", "right shift+P", self._pause_unpause, force_assignment = True)
+        hotkey_manager.create_hotkey("Swap Between Pearl Mode and Fruit Mode", "right shift+S", self._pause_unpause, force_assignment = True)
 
         # Creates dictionary of available commands as well as values to identify conditions for gameplay.
         self._last_command = None
@@ -63,6 +65,7 @@ class Rain_World_Manager():
         self._reward_IDs.update(dict.fromkeys([Reward_Titles.SNAILS.value], "snails"))
         self._reward_IDs.update(dict.fromkeys([Reward_Titles.DIRECT_SPAWN.value], "direct_spawn"))
         self._reward_IDs.update(dict.fromkeys([Reward_Titles.DOUBLE_SPAWN.value], "double_spawn"))
+        self._reward_IDs.update(dict.fromkeys([Reward_Titles.TRAIN_SPAWN.value], "train_spawn"))
         
 
     # Args for this function are generic and can be used according to the specific command messages desired.
@@ -116,6 +119,9 @@ class Rain_World_Manager():
             case "double_spawn":
                 asyncio.create_task(self._double_spawn())
 
+            case "train_spawn":
+                asyncio.create_task(self._train_spawn())
+
 
     ### In-game control functions, do not call from outside the class
 
@@ -124,18 +130,18 @@ class Rain_World_Manager():
 
 
     async def _spawn_snails(self) -> None:
-        self._spawn_key = TWO
+        self._spawn_key = NUMPAD_2
         print("Snails have been activated.")
         await asyncio.sleep(30)
-        self._spawn_key = ONE
+        self._spawn_key = NUMPAD_1
         print("Snails have been deactivated.")
 
 
     async def _direct_spawning(self) -> None:
-        self._spawn_key = THREE
+        self._spawn_key = NUMPAD_3
         print("Spawning on top of you.")
         await asyncio.sleep(40)
-        self._spawn_key = ONE
+        self._spawn_key = NUMPAD_1
         print("Spawning normally again.")
 
 
@@ -147,11 +153,13 @@ class Rain_World_Manager():
         print("Spawning normally again.")
 
 
+    async def _double_spawn(self) -> None:
+        print("Spawning a TRAIN.")
+        hold_and_release_key(NUMPAD_4, 0.02)
 
-    def _meow(self) -> None:
-        
-        duration = random.uniform(0.2,1.0)
-        hold_and_release_key("M", duration)
+
+    def _pearl_mode(self) -> None:
+        print("Changing to pearl mode.")
 
 
     # Movement vectors are changed according to xmod and ymod. Called by most chat message commands.

@@ -5,7 +5,7 @@ import random
 
 
 #CONFIG_FILENAME = os.path.join(os.pardir, 'config.ini')
-CONFIG_FILENAME = 'config.ini'
+CONFIG_FILENAME = '.\\config.ini'
 
 
 # Gets a specific section of the config file.
@@ -16,6 +16,7 @@ def get_config(section:"str") -> dict:
         return dict(config.items(section))
     except:
         print("\n!! Config file invalid !!\n")
+        print(f"Attempted to get {section} from {config} but cannot read section.")
         generate_config()
 
 
