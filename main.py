@@ -72,11 +72,11 @@ class Integration(object):
 
     # Monitors for a key combination of shift + enter + backspace to close the program. Cannot be called directly from create_hotkey due to async functions within it.
     async def background_loop(self) -> None:
-
+        print("Timeout check & end program hotkey are now enabled.")
         start_time = time.monotonic()
         running = True
         while running:
-            if keyboard.is_pressed("shift+enter+backspace"):
+            if keyboard.is_pressed("shift+ctrl+backspace"):
                 await self.end_program()
                 break
 

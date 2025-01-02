@@ -44,29 +44,26 @@ def get_module_list() -> list:
 
     try:
         selection = int(input()) - 2
-        match game_options[selection]:
-            case "Rain World":
-                module_list.append(Rain_World_Manager(hotkey_manager))
-            case "Minigolf":
-                module_list.append(Minigolf_Manager(hotkey_manager))
-        print(f"\n{game_options[selection]} has been selected.\n")
+        if selection < 0 or selection >= len(game_options):
+            raise Exception("No game selected.")
+        else:
+            match game_options[selection]:
+                case "Rain World":
+                    module_list.append(Rain_World_Manager(hotkey_manager))
+                case "Minigolf":
+                    module_list.append(Minigolf_Manager(hotkey_manager))
 
     except:
         print("\nNo game selected.\n")
 
     # Prints all relevant hotkeys to the session.
     print("Hotkeys are: ")
-    print('{:<15}  |  {:<25}'.format("End Program","shift+enter+backspace"))
+    print('{:<20}  |  {:<25}'.format("End Program","ctrl+shift+backspace"))
 
     for k, v in hotkey_manager.get_hotkey_dict().items():
-        print('{:<15}  |  {:<25}'.format(k,v))
+        print('{:<20}  |  {:<25}'.format(k,v))
 
-    try:
-        test = game_options[selection]
-        print("Right Shift + P            |  Pause game updates & commands/rewards.")
-    except:
-        pass
-
+    print("")
     
     return module_list
 

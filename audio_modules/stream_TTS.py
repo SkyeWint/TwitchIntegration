@@ -46,7 +46,7 @@ class TTS_Manager(object):
 
         # Sets up ability to pause without closing the function.
         self._paused = False
-        hotkey_manager.create_hotkey("Pause Button", "backspace+P", self._pause_unpause, force_assignment = True)
+        hotkey_manager.create_hotkey("Pause playing TTS", "backspace+P", self._pause_unpause, force_assignment = True)
         hotkey_manager.create_hotkey("Stop TTS Button", "right shift+backspace", self._skip_current_TTS)
 
         # Used for generating files.
@@ -90,7 +90,7 @@ class TTS_Manager(object):
                 break
 
         # Adjusts rate according to remaining messages in queue as well as length of message. Only for pyTTS audio.
-        rate = int((math.sqrt(self._TTS_queue.qsize() + 3) - 1) * 100)
+        rate = int(math.sqrt(self._TTS_queue.qsize() + 15) * 45)
         rate += int(self._estimate_syllables(text))
 
         self._TTS_parts = self._split_TTS_parts(text)
@@ -245,6 +245,7 @@ class TTS_Manager(object):
         self._running = False
         self._TTS_queue.shutdown(immediate = True)
         self._audio_player.skip_TTS()
+        await asyncio.sleep(3)
     
 
     async def update(self) -> None:
@@ -252,7 +253,11 @@ class TTS_Manager(object):
         while self._running:
             if not self._paused:
                 print("Waiting for next TTS message")
-                await self._next_TTS_message()
+                try:
+                    await self._next_TTS_message()
+                except Exception as e:
+                    print(f"TTS Queue is shut down.")
+                    break
             else:
                 # Less frequent checking occurs while paused to improve performance.
                 await asyncio.sleep(5)

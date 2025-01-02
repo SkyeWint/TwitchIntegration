@@ -25,8 +25,8 @@ from utils.message_parsing import SubscriptionMessage
 class Reward_Titles(Enum):
 
     SNAILS = "SNAILS!!!"
-    DIRECT_SPAWN = "Spawn Lock-on"
-    DOUBLE_SPAWN = "Double Spawn Rate"
+    DIRECT_SPAWN = "Lock-on Spawning"
+    FAST_SPAWN = "Fast Spawning"
     TRAIN_SPAWN = "CHOO CHOO"
 
 
@@ -38,16 +38,20 @@ class Rain_World_Manager():
         pydirectinput.FAILSAFE = False
 
         # Defines gameplay variables
-        self._spawn_key = ONE
-        self._spawn_rate = 1  # Per second
+
+        # Auto-spawning
+        self._spawn_keys = [NUMPAD_1, NUMPAD_2, NUMPAD_3, NUMPAD_4, NUMPAD_5, NUMPAD_6] # First 3 are indirect spawning, last 3 are direct spawning
+        self._spawn_indexes = [0,1]
+        self._spawn_rate = 1  # Initially per second
+        self._last_spawn_time = 0
+
 
         # Defines mouse movement vectors. Movement speed is mickeys/0.02s
         self._vectors = [0,0]
 
         # Sets up ability to pause without closing the function.
-        self._paused = False
+        self._paused = True
         hotkey_manager.create_hotkey("Pause Button", "right shift+P", self._pause_unpause, force_assignment = True)
-        hotkey_manager.create_hotkey("Swap Between Pearl Mode and Fruit Mode", "right shift+S", self._pause_unpause, force_assignment = True)
 
         # Creates dictionary of available commands as well as values to identify conditions for gameplay.
         self._last_command = None
@@ -64,7 +68,7 @@ class Rain_World_Manager():
 
         self._reward_IDs.update(dict.fromkeys([Reward_Titles.SNAILS.value], "snails"))
         self._reward_IDs.update(dict.fromkeys([Reward_Titles.DIRECT_SPAWN.value], "direct_spawn"))
-        self._reward_IDs.update(dict.fromkeys([Reward_Titles.DOUBLE_SPAWN.value], "double_spawn"))
+        self._reward_IDs.update(dict.fromkeys([Reward_Titles.FAST_SPAWN.value], "fast_spawn"))
         self._reward_IDs.update(dict.fromkeys([Reward_Titles.TRAIN_SPAWN.value], "train_spawn"))
         
 
@@ -75,6 +79,9 @@ class Rain_World_Manager():
         text = str.lower(text)
         text.translate(str.maketrans('', '', string.punctuation))
 
+        # print(f"DEBUG: Received message from {user}: {text}")
+        # print(f"DEBUG: Message corresponds to command: {self._chat_commands.get(text)}")
+
         # Pausing prevents any rewards from occurring.
         if self._paused:
             return
@@ -82,16 +89,16 @@ class Rain_World_Manager():
         match self._chat_commands.get(text): 
 
             case "up":
-                self._change_vectors(0, 4)
+                self._change_vectors(0, -6)
 
             case "down":
-                self._change_vectors(0, -4)
+                self._change_vectors(0, 6)
 
             case "left":
-                self._change_vectors(-4, 0)
+                self._change_vectors(-10, 0)
 
             case "right":
-                self._change_vectors(4, 0)
+                self._change_vectors(10, 0)
 
             case "stop":
                 self._reset_vectors()
@@ -103,6 +110,8 @@ class Rain_World_Manager():
     # Args for this function are generic and can be used according to the specific rewards being used.
     async def _handle_point_reward(self, user:"str", reward:"str", text:"str") -> None:
 
+        #print(f"DEBUG: Received point reward from {user}: {reward}")
+        #print(f"DEBUG: Reward corresponds to command: {self._reward_IDs.get(reward)}")
 
         # Pausing prevents rewards from occurring.
         if self._paused:
@@ -116,50 +125,61 @@ class Rain_World_Manager():
             case "direct_spawn":
                 asyncio.create_task(self._direct_spawning())
 
-            case "double_spawn":
-                asyncio.create_task(self._double_spawn())
+            case "fast_spawn":
+                asyncio.create_task(self._fast_spawn())
 
             case "train_spawn":
-                asyncio.create_task(self._train_spawn())
+                self._train_spawn()
 
 
     ### In-game control functions, do not call from outside the class
 
+    # Generic spawn function. Randomly presses a key on the current list to spawn creatures.
     def _spawn_object(self) -> None:
-        hold_and_release_key(self._spawn_key, 0.02)
+        index = self._spawn_indexes[random.randint(0,len(self._spawn_indexes) - 1)]
+        print(f"Pressing key {str(self._spawn_keys[index])} to spawn using index {index}")
+        hold_and_release_key(self._spawn_keys[index], 0.02)
 
 
     async def _spawn_snails(self) -> None:
-        self._spawn_key = NUMPAD_2
+        self._spawn_indexes[0] += 2
+        self._spawn_indexes[1] += 1
         print("Snails have been activated.")
+        print(f"Spawn indexes are now {str(self._spawn_indexes)}")
         await asyncio.sleep(30)
-        self._spawn_key = NUMPAD_1
+        self._spawn_indexes[0] -= 2
+        self._spawn_indexes[1] -= 1
         print("Snails have been deactivated.")
+        print(f"Spawn indexes are now {str(self._spawn_indexes)}")
 
 
     async def _direct_spawning(self) -> None:
-        self._spawn_key = NUMPAD_3
+        self._spawn_indexes[0] += 3
+        self._spawn_indexes[1] += 3
         print("Spawning on top of you.")
+        print(f"Spawn indexes are now {str(self._spawn_indexes)}")
         await asyncio.sleep(40)
-        self._spawn_key = NUMPAD_1
-        print("Spawning normally again.")
+        self._spawn_indexes[0] -= 3
+        self._spawn_indexes[1] -= 3
+        print("Spawning at mouse cursor again.")
+        print(f"Spawn indexes are now {str(self._spawn_indexes)}")
 
 
-    async def _double_spawn(self) -> None:
-        self._spawn_rate = self._spawn_rate * 2
-        print("Spawning at double time.")
+    async def _fast_spawn(self) -> None:
+        self._spawn_rate = self._spawn_rate * 3
+        print("Spawning at fast rate.")
+        print(f"Spawn rate is now {str(self._spawn_rate)}")
         await asyncio.sleep(60)
-        self._spawn_rate = self._spawn_rate / 2
-        print("Spawning normally again.")
+        self._spawn_rate = self._spawn_rate / 3
+        print("Spawning at normal rate again.")
+        print(f"Spawn rate is now {str(self._spawn_rate)}")
 
 
-    async def _double_spawn(self) -> None:
+    def _train_spawn(self) -> None:
         print("Spawning a TRAIN.")
-        hold_and_release_key(NUMPAD_4, 0.02)
+        hold_and_release_key(NUMPAD_7, 0.02)
 
 
-    def _pearl_mode(self) -> None:
-        print("Changing to pearl mode.")
 
 
     # Movement vectors are changed according to xmod and ymod. Called by most chat message commands.
@@ -213,16 +233,19 @@ class Rain_World_Manager():
 
         self._running = True
         while self._running:
-            if not self._paused:
+            if self._paused:
+                # Less frequent checking occurs while paused to improve performance.
+                await asyncio.sleep(1)
+
+            else:
                 self._move_mouse(self._vectors[0], self._vectors[1])
 
-                if (int((time.monotonic() - start_time) * 50) % (50/self._spawn_rate)) == 0:
+                if time.monotonic() > (self._last_spawn_time + (1 / self._spawn_rate)):
+                    self._last_spawn_time = time.monotonic()
                     self._spawn_object()
 
                 await asyncio.sleep(0.02)
-            else:
-                # Less frequent checking occurs while paused to improve performance.
-                await asyncio.sleep(1)
+                
             
             
 
@@ -233,4 +256,4 @@ class Rain_World_Manager():
 
         if msg.subscription_type() == "channel.channel_points_custom_reward_redemption.add":
             print(f'{msg.event_data().user_name} redeemed "{msg.event_data().reward['title']}"')
-            await self._handle_point_reward(user = msg.event_data().user_name, reward = msg.event_data().reward['id'], text = msg.event_data().user_input)
+            await self._handle_point_reward(user = msg.event_data().user_name, reward = msg.event_data().reward['title'], text = msg.event_data().user_input)

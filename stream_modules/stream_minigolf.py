@@ -34,7 +34,7 @@ class Minigolf_Manager():
         self._power_limit = 2000
 
         # Sets up ability to pause without closing the function.
-        self._paused = False
+        self._paused = True
         hotkey_manager.create_hotkey("Pause Button", "right shift+P", self._pause_unpause, force_assignment = True)
 
         # Creates dictionary of available commands as well as values to identify conditions for gameplay.
@@ -229,7 +229,6 @@ class Minigolf_Manager():
         self._reset_vectors()
         pydirectinput.mouseUp()
         self._aiming = True
-        print("Debug: FIRE!")
 
 
     # To be called via hotkey only. Pauses command processing and movement.
@@ -251,13 +250,14 @@ class Minigolf_Manager():
         
         self._running = True
         while self._running:
-            if not self._paused:
+            if self._paused:
+                # Less frequent checking occurs while paused to improve performance.
+                await asyncio.sleep(1)
+                
+            else:
                 self._move_mouse(self._vectors[0], self._vectors[1])
 
                 await asyncio.sleep(0.02)
-            else:
-                # Less frequent checking occurs while paused to improve performance.
-                await asyncio.sleep(1)
     
 
     async def handle_notification(self, msg:"SubscriptionMessage") -> None:
