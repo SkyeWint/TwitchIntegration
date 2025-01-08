@@ -91,7 +91,7 @@ class TTS_Manager(object):
 
         # Adjusts rate according to remaining messages in queue as well as length of message. Only for pyTTS audio.
         rate = int(math.sqrt(self._TTS_queue.qsize() + 15) * 45)
-        rate += int(self._estimate_syllables(text))
+        rate += int(self._estimate_syllables(text) * 0.5)
 
         self._TTS_parts = self._split_TTS_parts(text)
 

@@ -83,7 +83,7 @@ class Integration(object):
             if int(time.monotonic() - start_time) % 1 == 0:
                 # Only checks if the websocket connection has timed out every second instead of every 0.05 seconds.
                 if self.websocket_connection.check_if_timed_out():
-                    self.websocket_connection.reconnect()
+                    await self.websocket_connection.reconnect()
 
             await asyncio.sleep(0.05)
         
@@ -124,7 +124,7 @@ class Integration(object):
             #print(f"DEBUG: received {msg.message_type()}")
 
         elif msg.message_type() == MSG_TYPE.SESSION_RECONNECT.value:
-            self.websocket_connection.reconnect()
+            await self.websocket_connection.reconnect()
             #print(f"DEBUG: received {msg.message_type()}")
         
         elif msg.message_type() == MSG_TYPE.REVOCATION.value:

@@ -81,7 +81,7 @@ class Websocket_Connection(object):
 
             except websockets.exceptions.ConnectionClosed:
                 if self._reconnect_on_disconnection:
-                    self.reconnect()
+                    await self.reconnect()
 
         # Ensures reconnect occurs automatically when connection is closed in any way other than the close_connection() function.
         
