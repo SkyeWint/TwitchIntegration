@@ -166,6 +166,11 @@ class HTTP_Requests(object):
         
         if res.status_code == 200:
             return res.json()["data"][0]["id"]
+        
+        elif res.status_code == 401:
+            print("Invalid OAuth token. Requesting new bearer token and attempting to get user ID again.")
+            self._auth.refresh_access_token()
+            return self.get_user_id(username)
 
         else:
             raise Exception(f"Request failed; received status code {res.status_code} with error {res.text}")
@@ -179,5 +184,10 @@ class HTTP_Requests(object):
             }, 
             data=json.dumps(subscription_data.get_subscription_data(sub_type)))
         
-        if res.status_code != 202:
+        if res.status_code == 401: 
+            print("Invalid OAuth token. Requesting new bearer token and attempting subscription request again.")
+            self._auth.refresh_access_token()
+            self.subscribe_to_event(subscription_data, sub_type)
+
+        elif res.status_code != 202:
             raise Exception(f"Subscription request not accepted; received status code {res.status_code} with error {res.text}")
