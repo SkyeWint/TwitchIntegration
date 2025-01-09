@@ -38,9 +38,8 @@ class Websocket_Connection(object):
 
         # Connection-related variables.
         self._running = True
-        self._reconnect_on_disconnection = True
-        self._connection_closed = False
         self._timeout_limit = time.monotonic()
+        self._websocket = None
 
 
     ##### Connection-related functions
@@ -80,26 +79,15 @@ class Websocket_Connection(object):
 
 
             except websockets.exceptions.ConnectionClosed:
-                if self._reconnect_on_disconnection:
-                    await self.reconnect()
-
-        # Ensures reconnect occurs automatically when connection is closed in any way other than the close_connection() function.
+                self._websocket = None
         
-
-
-    # Ensures the websocket closes, then reinitializes the connection.
-    async def reconnect(self) -> None:
-        await self._websocket.close()
-        print("Connection closed. Reconnecting...")
-        self.connect()
 
 
     # Waits for the websocket to close properly. Should only be called when the program is ending.
     async def close_connection(self) -> None:
-        self._reconnect_on_disconnection = False
         self._running = False
         await self._websocket.close()
-
+        self._websocket = None
         print("Connection closed.")
 
         return
@@ -108,7 +96,7 @@ class Websocket_Connection(object):
 
     # Must be run periodically to verify that the websocket connection has not timed out. The reconnect() function should be called if this function returns False.
     def check_if_timed_out(self) -> bool:
-        if time.monotonic() > self._timeout_limit:
+        if self._websocket != None and time.monotonic() > self._timeout_limit:
             return True
         else:
             return False

@@ -37,35 +37,34 @@ class Integration(object):
 
         self.module_list = module_list
 
+        # Used to create a reference to all async functions run as concurrent tasks, to prevent python's garbage collector from killing them mid-execution.
+        self.tasks = set()
+
         # Initiates main loop after other initialization is complete.
         asyncio.run(self.main())
 
     async def main(self) -> None:
         
-        
-
-        # Used to create a reference to all async functions run as concurrent tasks, to prevent python's garbage collector from killing them mid-execution.
-        tasks = set()
 
         # Adds all selected stream module update() functions and websocket connection to Task Manager to execute in concurrent loops.
-        async with asyncio.TaskGroup() as tg:
+        async with asyncio.TaskGroup() as self.tg:
 
-            escape_task = tg.create_task(self.background_loop())
-            tasks.add(escape_task)
-            escape_task.add_done_callback(tasks.discard)    
+            escape_task = self.tg.create_task(self.background_loop())
+            self.tasks.add(escape_task)
+            escape_task.add_done_callback(self.tasks.discard)    
 
 
             for module in self.module_list:
                 if callable(getattr(module, "update", None)):
-                    update_task = tg.create_task(module.update())
-                    tasks.add(update_task)
-                    update_task.add_done_callback(tasks.discard)
+                    update_task = self.tg.create_task(module.update())
+                    self.tasks.add(update_task)
+                    update_task.add_done_callback(self.tasks.discard)
 
 
             # Adding websocket connection to Twitch after setting up updates.
-            connection_task = tg.create_task(self.websocket_connection.connect())
-            tasks.add(connection_task)
-            connection_task.add_done_callback(tasks.discard)
+            connection_task = self.tg.create_task(self.websocket_connection.connect())
+            self.tasks.add(connection_task)
+            connection_task.add_done_callback(self.tasks.discard)
 
         exit()
 
@@ -83,7 +82,11 @@ class Integration(object):
             if int(time.monotonic() - start_time) % 1 == 0:
                 # Only checks if the websocket connection has timed out every second instead of every 0.05 seconds.
                 if self.websocket_connection.check_if_timed_out():
-                    await self.websocket_connection.reconnect()
+                    await self.websocket_connection.close_connection()
+                    
+                    connection_task = self.tg.create_task(self.websocket_connection.connect())
+                    self.tasks.add(connection_task)
+                    connection_task.add_done_callback(self.tasks.discard)
 
             await asyncio.sleep(0.05)
         
