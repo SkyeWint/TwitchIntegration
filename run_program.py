@@ -4,7 +4,6 @@ import random
 from utils.config import validate_config_file
 from utils.hotkey_manager import Hotkey_Manager
 from stream_modules.stream_minigolf import Minigolf_Manager
-from stream_modules.stream_rainworld import Rain_World_Manager
 from audio_modules.audio_player import Audio_Manager
 from audio_modules.stream_sound_effects import Sound_Manager
 from audio_modules.stream_TTS import TTS_Manager
