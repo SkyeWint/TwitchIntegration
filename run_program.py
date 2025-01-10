@@ -11,7 +11,6 @@ from main import Integration
 
 
 game_options = [
-    "Rain World",
     "Minigolf"
 ]
 
@@ -47,8 +46,6 @@ def get_module_list() -> list:
             raise Exception("No game selected.")
         else:
             match game_options[selection]:
-                case "Rain World":
-                    module_list.append(Rain_World_Manager(hotkey_manager))
                 case "Minigolf":
                     module_list.append(Minigolf_Manager(hotkey_manager))
 
