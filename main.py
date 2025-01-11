@@ -1,14 +1,15 @@
-import keyboard
 import asyncio
-import time
 
 from enum import Enum
 
-from web_connections.auth import get_auth
-from web_connections.client_server_connections import Websocket_Connection, HTTP_Requests
+from twitch_api import Twitch_Connection
 
-# Used for function annotation. Not required at runtime.
-from utils.message_parsing import Message
+from utils_config import validate_config_file
+from utils_hotkey_manager import Hotkey_Manager
+from mode_minigolf import Minigolf_Manager
+from audiomodule_audio_player import Audio_Manager
+from audiomodule_sound_effects import Sound_Manager
+from audiomodule_TTS import TTS_Manager
 
 
 
@@ -25,34 +26,40 @@ class MSG_TYPE(Enum):
 
 ######### Private Functions #########
 
+game_options = [
+    "Minigolf"
+]
+
+
+
 class Integration(object):
-    def __init__(self, module_list:"list"):
+    def __init__(self):
         # Initializes websocket connection.
-        auth = get_auth()
-        self.http_requests = HTTP_Requests(auth)
-        self.websocket_connection = Websocket_Connection(self.http_requests)
-        self.websocket_connection.add_message_handler(self.message_handler)
+        
 
-        print(module_list)
+        self.hotkey_manager = Hotkey_Manager()
 
-        self.module_list = module_list
+        # Sets up kill switch.
+        self.running = True
+        self.hotkey_manager.create_hotkey("Terminate Program", "right ctrl+right shift+backspace", self._stop_running, force_assignment = True)
+
+        self.module_list = self.get_module_list()
 
         # Used to create a reference to all async functions run as concurrent tasks, to prevent python's garbage collector from killing them mid-execution.
         self.tasks = set()
 
-        # Initiates main loop after other initialization is complete.
-        asyncio.run(self.main())
-
+        
     async def main(self) -> None:
         
+        self.twitch_connection = Twitch_Connection(self.module_list)
+        await self.twitch_connection.initialize_twitch()
 
-        # Adds all selected stream module update() functions and websocket connection to Task Manager to execute in concurrent loops.
+        # Adds all selected stream module update() functions and websocket connection to Task Manager to execute in concurrent loops. Maintains in a loop until self.tg no longer has tasks to manage.
         async with asyncio.TaskGroup() as self.tg:
 
-            escape_task = self.tg.create_task(self.background_loop())
-            self.tasks.add(escape_task)
-            escape_task.add_done_callback(self.tasks.discard)    
-
+            kill_switch = self.tg.create_task(self.kill_switch())
+            self.tasks.add(kill_switch)
+            kill_switch.add_done_callback(self.tasks.discard)
 
             for module in self.module_list:
                 if callable(getattr(module, "update", None)):
@@ -60,79 +67,99 @@ class Integration(object):
                     self.tasks.add(update_task)
                     update_task.add_done_callback(self.tasks.discard)
 
-
-            # Adding websocket connection to Twitch after setting up updates.
-            connection_task = self.tg.create_task(self.websocket_connection.connect())
+            connection_task = self.tg.create_task(self.twitch_connection.run())
             self.tasks.add(connection_task)
             connection_task.add_done_callback(self.tasks.discard)
+
 
         exit()
 
 
-    # Monitors for a key combination of shift + enter + backspace to close the program. Cannot be called directly from create_hotkey due to async functions within it.
-    async def background_loop(self) -> None:
-        print("Timeout check & end program hotkey are now enabled.")
-        start_time = time.monotonic()
-        running = True
-        while running:
-            if keyboard.is_pressed("shift+ctrl+backspace"):
-                await self.end_program()
-                break
+    # Only to be called by hotkey. Tells the program to stop running, obviously.
+    def _stop_running(self) -> None:
 
-            if int(time.monotonic() - start_time) % 1 == 0:
-                # Only checks if the websocket connection has timed out every second instead of every 0.05 seconds.
-                if self.websocket_connection.check_if_timed_out():
-                    await self.websocket_connection.close_connection()
-                    
-                    connection_task = self.tg.create_task(self.websocket_connection.connect())
-                    self.tasks.add(connection_task)
-                    connection_task.add_done_callback(self.tasks.discard)
-
-            await asyncio.sleep(0.05)
+        print("Program shutdown initiated. Please wait for program to shut down...")
+        self.running = False
         
 
-    # Closes program gracefully.
-    async def end_program(self) -> None:
+    # Closes program gracefully once program is told to stop running.
+    async def kill_switch(self) -> None:
+        
+        # Perpetually sleeps until hotkey is pressed to stop the program from continuing to run, then shuts down the program.
+        while self.running:
+            await asyncio.sleep(2)
 
-        print("Terminating tasks.")
+
+        print("Terminating list of running tasks.")
         # Closes out existing tasks gracefully instead of terminating them mid-execution.
-        await self.websocket_connection.close_connection()
 
         for module in self.module_list:
             if callable(getattr(module, "terminate_module", None)):
                 await module.terminate_module()
 
+        self.twitch_connection.stop_running()
+
+
         print("All tasks should be terminated now. Closing program.")
 
 
-
-
-    ######### Event Handler Functions #########
-    # Should only be added to handler lists.
-
-    # Sorts parsed messages from the websocket connection based on type.
-    async def message_handler(self, msg:"Message") -> None:
-
-        # Primary message type received from 
-        if msg.message_type() == MSG_TYPE.NOTIFICATION.value:
-            self.websocket_connection.reset_timeout_limit()
-            for module in self.module_list:
-                if callable(getattr(module, "handle_notification", None)):
-                    await module.handle_notification(msg)
-            #print(f"DEBUG: received {msg.message_type()} message for {msg.subscription_type()}")
-            
-
-        elif msg.message_type() == MSG_TYPE.SESSION_KEEPALIVE.value:
-            self.websocket_connection.reset_timeout_limit()
-            #print(f"DEBUG: received {msg.message_type()}")
-
-        elif msg.message_type() == MSG_TYPE.SESSION_RECONNECT.value:
-            await self.websocket_connection.reconnect()
-            #print(f"DEBUG: received {msg.message_type()}")
+    # Requests input on list of modules to run in the integration program, initializes them, then returns the list.
+    def get_module_list(self) -> list:
         
-        elif msg.message_type() == MSG_TYPE.REVOCATION.value:
-            raise Exception(f"Yo dude ur {msg.subscription_type()} version {msg.subscription_version()} broke, here's why: {msg.subscription_status()} \nCmon, you can fix it. Five minute coding adventure.")
         
-        else:
-            raise Exception(f"Unexpected message type: {msg.message_id()}")
+        module_list = []
 
+        print("Would you like sound effects enabled during this stream? y/n   [Default: y]")
+        if input() != "n":
+            audio_manager = Audio_Manager()
+            module_list.append(audio_manager)
+            module_list.append(Sound_Manager(audio_manager))
+
+        print("Would you like Text to Speech enabled during this stream? y/n   [Default: y]")
+        if input() != "n":
+            try:
+                module_list.append(TTS_Manager(self.hotkey_manager, audio_manager))
+            except:
+                module_list.append(TTS_Manager(self.hotkey_manager, Audio_Manager()))
+
+        print("Select the game you are playing from the following options:")
+        print("1: None [Default]")
+        for i, game in enumerate(game_options):
+            print(f"{str(i + 2)}: {game}")
+
+        try:
+            selection = int(input()) - 2
+            if selection < 0 or selection >= len(game_options):
+                raise Exception("No game selected.")
+            else:
+                match game_options[selection]:
+                    case "Minigolf":
+                        module_list.append(Minigolf_Manager(self.hotkey_manager))
+
+        except:
+            print("\nNo game selected.\n")
+
+        # Prints all relevant hotkeys to the session.
+        print("Hotkeys are: ")
+
+        for k, v in self.hotkey_manager.get_hotkey_dict().items():
+            print('{:<20}  |  {:<25}'.format(k,v))
+
+        print("")
+        
+        return module_list
+
+
+
+##### Run code
+
+if __name__ == "__main__":
+
+    print("Welcome to SkyeWint's Twitch Integration program!\n")
+
+    validate_config_file()
+
+    program = Integration()
+
+    # Initiates main loop after other initialization is complete.
+    asyncio.run(program.main())

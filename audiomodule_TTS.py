@@ -5,16 +5,17 @@ import asyncio
 from syllables import estimate as estimate_syllables
 from enum import Enum
 
-from utils.config import get_config
+from utils_config import get_config
+
+from twitchAPI.object.eventsub import ChannelPointsCustomRewardRedemptionAddEvent
 
 # TTS generators
 from gtts import gTTS
 import pyttsx3
 
 # Used for function annotation. Not required at runtime.
-from utils.hotkey_manager import Hotkey_Manager
-from utils.message_parsing import SubscriptionMessage
-from audio_modules.audio_player import Audio_Manager
+from utils_hotkey_manager import Hotkey_Manager
+from audiomodule_audio_player import Audio_Manager
 
 
 ######### Enum List #########
@@ -22,7 +23,7 @@ from audio_modules.audio_player import Audio_Manager
 
 class Reward_Titles(Enum):
 
-    NORMAL_TTS = get_config("STREAM INFO").get("tts_reward_title")
+    NORMAL_TTS = get_config("INITIALIZATION").get("tts_reward_title")
 
 
 
@@ -50,7 +51,7 @@ class TTS_Manager(object):
         hotkey_manager.create_hotkey("Stop TTS Button", "right shift+backspace", self._skip_current_TTS)
 
         # Used for generating files.
-        self._file_path_base = ".\\audio_modules\\sound_effects\\"
+        self._file_path_base = ".\\sound_effects\\"
 
         self._TTS_queue = queue.Queue(0)
         self._TTS_parts = []
@@ -61,16 +62,6 @@ class TTS_Manager(object):
         # The values in [] brackets MUST match the point rewards on your channel, whichever is changed.
         self._reward_titles.update(dict.fromkeys([Reward_Titles.NORMAL_TTS.value], "normal TTS"))
 
-
-    # Args for this function are generic and can be used according to the specific rewards being used.
-    async def _handle_point_reward(self, user:"str", reward:"str", text:"str") -> None:
-        
-
-        # TTS messages are only placed on the queue. update() constantly awaits the next TTS message.
-        match self._reward_titles.get(reward): 
-            case "normal TTS":
-                print(f"TTS redemption: {text}")
-                self._TTS_queue.put(text)
 
 
     # Gets the next TTS message from the queue and processes it while TTS is not paused.
@@ -154,10 +145,6 @@ class TTS_Manager(object):
         
         return TTS_path_list
 
-        
-
-
-
 
     # Returns a list of TTS sections divided by voice codes in the enum Voice_Codes.
     def _split_TTS_parts(self, text:"str") -> list:
@@ -208,6 +195,9 @@ class TTS_Manager(object):
             print("Text to speech integration is now unpaused.")
 
 
+
+
+
     ##### Public functions
 
     # Generates TTS file using google voice.
@@ -245,6 +235,8 @@ class TTS_Manager(object):
         self._running = False
         self._TTS_queue.shutdown(immediate = True)
         self._audio_player.skip_TTS()
+
+        # Waits for 3 seconds to allow queue to shut down properly.
         await asyncio.sleep(3)
     
 
@@ -256,20 +248,19 @@ class TTS_Manager(object):
                 try:
                     await self._next_TTS_message()
                 except Exception as e:
-                    print(f"TTS Queue is shut down.")
+                    print(f"TTS Queue is shut down. Exception {e}")
                     break
             else:
                 # Less frequent checking occurs while paused to improve performance.
                 await asyncio.sleep(5)
 
-
-    async def handle_notification(self, msg:"SubscriptionMessage") -> None:
-        # No chat message commands for this module. Uncomment if any are added.
-        """ if msg.subscription_type() == "channel.chat.message":
-            print(f'{msg.event_data().chatter_user_name} said "{msg.event_data().message['text']}"')
-            self._handle_chat_message(user = msg.event_data().chatter_user_name, text = msg.event_data().message['text']) """
-
+    
+    # Receives channel point redemption event and directs it according to the matching point reward based on self._reward_titles.
+    async def handle_point_reward(self, point_reward:"ChannelPointsCustomRewardRedemptionAddEvent") -> None:
         
-        if msg.subscription_type() == "channel.channel_points_custom_reward_redemption.add":
-            print(f'{msg.event_data().user_name} redeemed "{msg.event_data().reward['title']}"')
-            await self._handle_point_reward(user = msg.event_data().user_name, reward = msg.event_data().reward['title'], text = msg.event_data().user_input)
+
+        # TTS messages are only placed on the queue. update() constantly awaits the next TTS message.
+        match self._reward_titles.get(point_reward.event.reward.title): 
+            case "normal TTS":
+                print(f"TTS redemption from {point_reward.event.user_name} with text: {point_reward.event.user_input}")
+                self._TTS_queue.put(point_reward.event.user_input)

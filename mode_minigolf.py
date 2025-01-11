@@ -4,11 +4,12 @@ import asyncio
 import pyautogui
 import numpy
 
-from utils.keycodes import *
+from utils_keycodes import *
+
+from twitchAPI.object.eventsub import ChannelChatMessageEvent
 
 # Used for function annotation. Not required at runtime.
-from utils.hotkey_manager import Hotkey_Manager
-from utils.message_parsing import SubscriptionMessage
+from utils_hotkey_manager import Hotkey_Manager
 
 
 
@@ -72,95 +73,6 @@ class Minigolf_Manager():
 
         self._chat_commands.update(dict.fromkeys(["jump", "yeet"], "jump"))
     
-
-    # Args for this function are generic and can be used according to the specific command messages desired.
-    def _handle_chat_message(self, user:"str", text:"str"):
-        
-        # Normalizes username to lowercase and removes punctuation for flexible command matching.
-        text = str.lower(text)
-        text.translate(str.maketrans('', '', string.punctuation))
-
-        if self._paused:
-            return
-
-        # Some commands should only be usable while aiming, others should only be usable once aiming is over.
-        if self._aiming:
-            match self._chat_commands.get(text):
-                case "up":
-                    self._change_vectors(0, 4)
-
-                case "down":
-                    self._change_vectors(0, -4)
-
-                case "left":
-                    self._change_vectors(-4, 0)
-
-                case "right":
-                    self._change_vectors(4, 0)
-                
-                case "lock in":
-                    self._lock_in_aim()
-
-                case "slightly right":
-                    if self._slight_aim_adjustment_counter < self._slight_aim_adjustment_limit:
-                        self._slight_movement(15, 0)
-                        self._slight_aim_adjustment_counter += 1
-                    print(self._slight_aim_adjustment_counter)
-
-                case "slightly left":
-                    if self._slight_aim_adjustment_counter < self._slight_aim_adjustment_limit:
-                        self._slight_movement(-15, 0)
-                        self._slight_aim_adjustment_counter += 1
-                    print(self._slight_aim_adjustment_counter)
-
-
-        else:
-            match self._chat_commands.get(text):
-                case "more":
-                    self._change_vectors(0, 4)
-
-                case "less":
-                    self._change_vectors(0, -4)
-
-                case "slightly more":
-                    if self._slight_power_adjustment_counter < self._slight_power_adjustment_limit:
-                        self._slight_movement(0, 15)
-                        self._slight_power_adjustment_counter += 1
-                    print(self._slight_power_adjustment_counter)
-
-                case "slightly less":
-                    if self._slight_power_adjustment_counter < self._slight_power_adjustment_limit:
-                        self._slight_movement(0, -15)
-                        self._slight_power_adjustment_counter += 1
-                    print(self._slight_power_adjustment_counter)
-
-                case "aim":
-                    if self._last_command == "aim":
-                        self._go_back_to_aiming()
-
-                        # Power adjustment-related counters are reset when aiming.
-                        self._slight_power_adjustment_counter = 0
-
-                case "fire":
-                    if self._last_command == "fire":
-                        self._fire()
-
-                        # All counters are reset when firing as the turn is over. 
-                        self._slight_power_adjustment_counter = 0
-                        self._slight_aim_adjustment_counter = 0
-                        self._power_total = 0
-
-
-        match self._chat_commands.get(text):
-            case "stop":
-                self._reset_vectors()
-            
-            case "jump":
-                hold_and_release_key(J, 0.02)
-
-
-        if text in self._chat_commands.keys():
-            self._last_command = self._chat_commands.get(text)
 
 
     ### In-game control functions, do not call from outside the class
@@ -260,12 +172,93 @@ class Minigolf_Manager():
                 await asyncio.sleep(0.02)
     
 
-    async def handle_notification(self, msg:"SubscriptionMessage") -> None:
-        if msg.subscription_type() == "channel.chat.message":
-            print(f'{msg.event_data().chatter_user_name} said "{msg.event_data().message['text']}"')
-            self._handle_chat_message(user = msg.event_data().chatter_user_name, text = msg.event_data().message['text'])
 
-        # No channel point reward redemptions for this module. Uncomment if any are added.
-        """ if msg.subscription_type() == "channel.channel_points_custom_reward_redemption.add":
-            print(f'{msg.event_data().user_name} redeemed "{msg.event_data().reward['title']}"')
-            await self._handle_point_reward(user = msg.event_data().user_name, reward = msg.event_data().reward['id']) """
+    # Receives chat message event and directs it according to the matching command based on self._chat_commands.
+    async def _handle_chat_message(self, chat_message:"ChannelChatMessageEvent"):
+
+        
+        # Normalizes username to lowercase and removes punctuation for flexible command matching.
+        text = str.lower(chat_message.event.message.text)
+        text.translate(str.maketrans('', '', string.punctuation))
+
+        if self._paused:
+            return
+
+        # Some commands should only be usable while aiming, others should only be usable once aiming is over.
+        if self._aiming:
+            match self._chat_commands.get(text):
+                case "up":
+                    self._change_vectors(0, 4)
+
+                case "down":
+                    self._change_vectors(0, -4)
+
+                case "left":
+                    self._change_vectors(-4, 0)
+
+                case "right":
+                    self._change_vectors(4, 0)
+                
+                case "lock in":
+                    self._lock_in_aim()
+
+                case "slightly right":
+                    if self._slight_aim_adjustment_counter < self._slight_aim_adjustment_limit:
+                        self._slight_movement(15, 0)
+                        self._slight_aim_adjustment_counter += 1
+                    print(self._slight_aim_adjustment_counter)
+
+                case "slightly left":
+                    if self._slight_aim_adjustment_counter < self._slight_aim_adjustment_limit:
+                        self._slight_movement(-15, 0)
+                        self._slight_aim_adjustment_counter += 1
+                    print(self._slight_aim_adjustment_counter)
+
+
+        else:
+            match self._chat_commands.get(text):
+                case "more":
+                    self._change_vectors(0, 4)
+
+                case "less":
+                    self._change_vectors(0, -4)
+
+                case "slightly more":
+                    if self._slight_power_adjustment_counter < self._slight_power_adjustment_limit:
+                        self._slight_movement(0, 15)
+                        self._slight_power_adjustment_counter += 1
+                    print(self._slight_power_adjustment_counter)
+
+                case "slightly less":
+                    if self._slight_power_adjustment_counter < self._slight_power_adjustment_limit:
+                        self._slight_movement(0, -15)
+                        self._slight_power_adjustment_counter += 1
+                    print(self._slight_power_adjustment_counter)
+
+                case "aim":
+                    if self._last_command == "aim":
+                        self._go_back_to_aiming()
+
+                        # Power adjustment-related counters are reset when aiming.
+                        self._slight_power_adjustment_counter = 0
+
+                case "fire":
+                    if self._last_command == "fire":
+                        self._fire()
+
+                        # All counters are reset when firing as the turn is over. 
+                        self._slight_power_adjustment_counter = 0
+                        self._slight_aim_adjustment_counter = 0
+                        self._power_total = 0
+
+
+        match self._chat_commands.get(text):
+            case "stop":
+                self._reset_vectors()
+            
+            case "jump":
+                hold_and_release_key(J, 0.02)
+
+
+        if text in self._chat_commands.keys():
+            self._last_command = self._chat_commands.get(text)

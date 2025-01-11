@@ -1,6 +1,7 @@
 /__pycache__
 /config.ini
 /TODO.txt
+/user_token.json
 /web_connections/__pycache__
 /utils/__pycache__
 /stream_modules/__pycache__
