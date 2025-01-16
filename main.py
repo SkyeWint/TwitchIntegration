@@ -6,6 +6,7 @@ from twitch_api import Twitch_Connection
 
 from utils_config import validate_config_file
 from utils_hotkey_manager import Hotkey_Manager
+from utils_music_metadata import Metadata_Manager
 from module_minigolf import Minigolf_Manager
 from audiomodule_audio_player import Audio_Manager
 from audiomodule_sound_effects import Sound_Manager
@@ -108,6 +109,10 @@ class Integration(object):
         
         
         module_list = []
+        metadata_manager = Metadata_Manager()
+
+        module_list.append(metadata_manager)
+        
 
         print("Would you like sound effects enabled during this stream? y/n   [Default: y]")
         if input() != "n":
