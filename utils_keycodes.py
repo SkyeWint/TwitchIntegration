@@ -3,6 +3,7 @@
 import time
 import ctypes
 import pynput
+import asyncio
 
 #############################################################
 #################### DIRECT X KEY CODES #####################
@@ -124,14 +125,14 @@ MOUSE_WHEEL_DOWN = 0x109
 # Use these to prevent conflict errors with pynput.
 SendInput = ctypes.windll.user32.SendInput
 
-def hold_key(hexKeyCode) -> None:
+async def hold_key(hexKeyCode) -> None:
     extra = ctypes.c_ulong(0)
     ii_ = pynput._util.win32.INPUT_union()
     ii_.ki = pynput._util.win32.KEYBDINPUT(0, hexKeyCode, 0x0008, 0, ctypes.cast(ctypes.pointer(extra), ctypes.c_void_p))
     x = pynput._util.win32.INPUT(ctypes.c_ulong(1), ii_)
     SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
 
-def release_key(hexKeyCode):
+async def release_key(hexKeyCode):
     extra = ctypes.c_ulong(0)
     ii_ = pynput._util.win32.INPUT_union()
     ii_.ki = pynput._util.win32.KEYBDINPUT(0, hexKeyCode, 0x0008 | 0x0002, 0, ctypes.cast(ctypes.pointer(extra), ctypes.c_void_p))
@@ -139,7 +140,7 @@ def release_key(hexKeyCode):
     SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
 
 # Holds down a key for the specified number of seconds
-def hold_and_release_key(hexKeyCode, seconds:float):
+async def hold_and_release_key(hexKeyCode, seconds:float):
     hold_key(hexKeyCode)
-    time.sleep(seconds)
+    asyncio.sleep(seconds)
     release_key(hexKeyCode)

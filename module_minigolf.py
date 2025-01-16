@@ -257,7 +257,7 @@ class Minigolf_Manager():
                 self._reset_vectors()
             
             case "jump":
-                hold_and_release_key(J, 0.02)
+                await hold_and_release_key(J, 0.02)
 
 
         if text in self._chat_commands.keys():

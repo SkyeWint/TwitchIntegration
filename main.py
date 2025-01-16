@@ -6,7 +6,7 @@ from twitch_api import Twitch_Connection
 
 from utils_config import validate_config_file
 from utils_hotkey_manager import Hotkey_Manager
-from mode_minigolf import Minigolf_Manager
+from module_minigolf import Minigolf_Manager
 from audiomodule_audio_player import Audio_Manager
 from audiomodule_sound_effects import Sound_Manager
 from audiomodule_TTS import TTS_Manager
@@ -122,8 +122,8 @@ class Integration(object):
             except:
                 module_list.append(TTS_Manager(self.hotkey_manager, Audio_Manager()))
 
-        print("Select the game you are playing from the following options:")
-        print("1: None [Default]")
+        print("Pick the integration mode from the following options:")
+        print("1: None. [Default]")
         for i, game in enumerate(game_options):
             print(f"{str(i + 2)}: {game}")
 

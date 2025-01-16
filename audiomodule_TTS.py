@@ -77,7 +77,7 @@ class TTS_Manager(object):
                     return
                 await asyncio.sleep(1)
             else:
-                print(f"TTS message detected: {text}")
+                #print(f"TTS message detected: {text}")
                 break
 
         # Adjusts rate according to remaining messages in queue as well as length of message. Only for pyTTS audio.
@@ -99,11 +99,15 @@ class TTS_Manager(object):
         
         TTS_path_list = []
 
+        #print(f"DEBUG: TTS_parts = '{self._TTS_parts}'")
+
         for i, TTS in enumerate(self._TTS_parts):
 
-            #print(f"DEBUG: {TTS} <-- Message | Index--> {str(i)}")
+            #print(f"DEBUG: '{TTS}' <-- Message | Index--> '{str(i)}'")
 
             await asyncio.sleep(0.1) # Provides a period for other concurrent functions to run as needed.
+
+            
 
             # Checks if a voice code exists at the start of the TTS part and maintains the full string if none are detected.
             if TTS.split(maxsplit = 1)[0] not in [k.value for k in Voice_Codes]:
@@ -117,10 +121,13 @@ class TTS_Manager(object):
                 TTS_path_list.append(TTS_file_path)
                 continue
                 
-
+                
 
             # If a voice code does exist at the start of the string, the voice code is split and used to identify the voice to use, while the remainder of the string is passed to TTS generation.
             TTS = TTS.split(maxsplit = 1)
+
+            if len(TTS) < 2:
+                continue
 
             match TTS[0]:
                 case Voice_Codes.PYTTS_MALE.value:
@@ -264,3 +271,20 @@ class TTS_Manager(object):
             case "normal TTS":
                 print(f"TTS redemption from {point_reward.event.user_name} with text: {point_reward.event.user_input}")
                 self._TTS_queue.put(point_reward.event.user_input)
+
+
+
+
+
+##### DEBUG CODE
+
+async def main(tts):
+
+    pass
+
+if __name__ == "__main__":
+    hk = Hotkey_Manager()
+    player = Audio_Manager()
+    tts = TTS_Manager(hk, player)
+
+    asyncio.run(main(tts))
