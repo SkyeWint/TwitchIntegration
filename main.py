@@ -2,7 +2,7 @@ import asyncio
 
 from enum import Enum
 
-from twitch_api import Twitch_Connection
+from connection_twitch_api import Twitch_Connection
 
 from utils_config import validate_config_file
 from utils_hotkey_manager import Hotkey_Manager
