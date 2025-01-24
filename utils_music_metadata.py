@@ -22,7 +22,11 @@ class Metadata_Manager():
         # Opens metadata file from foobar.
         with open(METADATA_FILENAME, "r") as file:
 
-            metadata = file.readline()
+            try: 
+                metadata = file.readline()
+            except:
+                metadata = "Tell Skye ---This music ---Has an error ---Thanks"
+            
             self.current_metadata = str(metadata).split("---")
         
         # Writes current song's name.

@@ -255,7 +255,7 @@ class TTS_Manager(object):
                 try:
                     await self._next_TTS_message()
                 except Exception as e:
-                    print(f"TTS Queue is shut down. Exception {e}")
+                    print(f"TTS Queue is shut down. Exception received: {e}")
                     break
             else:
                 # Less frequent checking occurs while paused to improve performance.

@@ -141,6 +141,6 @@ async def release_key(hexKeyCode):
 
 # Holds down a key for the specified number of seconds
 async def hold_and_release_key(hexKeyCode, seconds:float):
-    hold_key(hexKeyCode)
-    asyncio.sleep(seconds)
-    release_key(hexKeyCode)
+    await hold_key(hexKeyCode)
+    await asyncio.sleep(seconds)
+    await release_key(hexKeyCode)

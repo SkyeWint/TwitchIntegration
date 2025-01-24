@@ -7,7 +7,8 @@ from connection_twitch_api import Twitch_Connection
 from utils_config import validate_config_file
 from utils_hotkey_manager import Hotkey_Manager
 from utils_music_metadata import Metadata_Manager
-from module_minigolf import Minigolf_Manager
+from stream_module_minigolf import Minigolf_Manager
+from stream_module_rainworld import Rain_World_Manager
 from audiomodule_audio_player import Audio_Manager
 from audiomodule_sound_effects import Sound_Manager
 from audiomodule_TTS import TTS_Manager
@@ -28,7 +29,8 @@ class MSG_TYPE(Enum):
 ######### Private Functions #########
 
 game_options = [
-    "Minigolf"
+    "Minigolf",
+    "Rain World"
 ]
 
 
@@ -139,7 +141,13 @@ class Integration(object):
             else:
                 match game_options[selection]:
                     case "Minigolf":
+                        print("\nMinigolf selected.\n")
                         module_list.append(Minigolf_Manager(self.hotkey_manager))
+
+                match game_options[selection]:
+                    case "Rain World":
+                        print("\nRain World selected.\n")
+                        module_list.append(Rain_World_Manager(self.hotkey_manager, audio_manager))
 
         except:
             print("\nNo game selected.\n")
@@ -148,7 +156,7 @@ class Integration(object):
         print("Hotkeys are: ")
 
         for k, v in self.hotkey_manager.get_hotkey_dict().items():
-            print('{:<20}  |  {:<25}'.format(k,v))
+            print('{:<50}  |  {:<50}'.format(k,v))
 
         print("")
         
