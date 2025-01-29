@@ -15,7 +15,8 @@ import pyttsx3
 
 # Used for function annotation. Not required at runtime.
 from utils_hotkey_manager import Hotkey_Manager
-from audiomodule_audio_player import Audio_Manager
+from audio_module_audio_player import Audio_Manager
+from connection_http_requests import HTTP_Requests
 
 
 ######### Enum List #########
@@ -37,9 +38,10 @@ class Voice_Codes(Enum):
 
 
 class TTS_Manager(object):
-    def __init__(self, hotkey_manager:"Hotkey_Manager", audio_player:"Audio_Manager") -> None:
+    def __init__(self, hotkey_manager:"Hotkey_Manager", audio_player:"Audio_Manager", http_requests:"HTTP_Requests") -> None:
 
         self._audio_player = audio_player
+        self.http_requests = http_requests
 
         # Base pyTTS objects, baserate is used for speech speed.
         self._pyTTS = pyttsx3.init()
@@ -261,6 +263,7 @@ class TTS_Manager(object):
                 # Less frequent checking occurs while paused to improve performance.
                 await asyncio.sleep(5)
 
+    
     
     # Receives channel point redemption event and directs it according to the matching point reward based on self._reward_titles.
     async def handle_point_reward(self, point_reward:"ChannelPointsCustomRewardRedemptionAddEvent") -> None:

@@ -83,9 +83,11 @@ def generate_config() -> None:
 
     print('\nPlease input your desired scope.')
     print('If you do not know your intended scope, press Enter without any input for the default scope.')
+    print('Scope definitions are found under the python Twitch API package\'s Type Definitions page.')
+    print('If you aren\'t editing this program\'s code directly, you should just use the default scope.')
     scope = input()
     if scope == "":
-        scope = "channel:manage:redemptions moderator:manage:banned_users user:read:chat user:write:chat user:bot channel:manage:predictions bits:read channel:read:charity"
+        scope = "CHANNEL_MANAGE_REDEMPTIONS MODERATOR_MANAGE_BANNED_USERS USER_READ_CHAT USER_WRITE_CHAT CHANNEL_BOT CHANNEL_MANAGE_PREDICTIONS BITS_READ CHANNEL_READ_CHARITY CHANNEL_EDIT_COMMERCIAL MODERATOR_MANAGE_ANNOUNCEMENTS MODERATOR_MANAGE_SHOUTOUTS"
 
     # After requesting input on all optional fields, build the config file.
     config = configparser.RawConfigParser()

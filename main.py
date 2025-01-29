@@ -3,15 +3,17 @@ import asyncio
 from enum import Enum
 
 from connection_twitch_api import Twitch_Connection
+from connection_http_requests import HTTP_Requests
 
 from utils_config import validate_config_file
 from utils_hotkey_manager import Hotkey_Manager
 from utils_music_metadata import Metadata_Manager
+from utils_general_twitch_functions import General_Twitch_Functions
 from stream_module_minigolf import Minigolf_Manager
 from stream_module_rainworld import Rain_World_Manager
-from audiomodule_audio_player import Audio_Manager
-from audiomodule_sound_effects import Sound_Manager
-from audiomodule_TTS import TTS_Manager
+from audio_module_audio_player import Audio_Manager
+from audio_module_sound_effects import Sound_Manager
+from audio_module_TTS import TTS_Manager
 
 
 
@@ -36,11 +38,11 @@ game_options = [
 
 
 class Integration(object):
-    def __init__(self):
+    def __init__(self) -> None:
         # Initializes websocket connection.
         
-
         self.hotkey_manager = Hotkey_Manager()
+        self.http_requests = HTTP_Requests()
 
         # Sets up kill switch.
         self.running = True
@@ -57,23 +59,33 @@ class Integration(object):
         self.twitch_connection = Twitch_Connection(self.module_list)
         await self.twitch_connection.initialize_twitch()
 
+        self.http_requests.init_user_id()
+
+        self.http_requests.send_chat_announcement("The integration code is now connected and running! TTS, sound effects, and other fun things will now work! skyewiGormsip")
+
         # Adds all selected stream module update() functions and websocket connection to Task Manager to execute in concurrent loops. Maintains in a loop until self.tg no longer has tasks to manage.
-        async with asyncio.TaskGroup() as self.tg:
+        try:
+            async with asyncio.TaskGroup() as self.tg:
 
-            kill_switch = self.tg.create_task(self.kill_switch())
-            self.tasks.add(kill_switch)
-            kill_switch.add_done_callback(self.tasks.discard)
+                kill_switch = self.tg.create_task(self.kill_switch())
+                self.tasks.add(kill_switch)
+                kill_switch.add_done_callback(self.tasks.discard)
 
-            for module in self.module_list:
-                if callable(getattr(module, "update", None)):
-                    update_task = self.tg.create_task(module.update())
-                    self.tasks.add(update_task)
-                    update_task.add_done_callback(self.tasks.discard)
+                for module in self.module_list:
+                    if callable(getattr(module, "update", None)):
+                        update_task = self.tg.create_task(module.update())
+                        self.tasks.add(update_task)
+                        update_task.add_done_callback(self.tasks.discard)
 
-            connection_task = self.tg.create_task(self.twitch_connection.run())
-            self.tasks.add(connection_task)
-            connection_task.add_done_callback(self.tasks.discard)
+                connection_task = self.tg.create_task(self.twitch_connection.run())
+                self.tasks.add(connection_task)
+                connection_task.add_done_callback(self.tasks.discard)
 
+        except Exception as e:
+
+            print(f"Encountered exception {e}")
+
+            self._stop_running()
 
         exit()
 
@@ -100,6 +112,8 @@ class Integration(object):
             if callable(getattr(module, "terminate_module", None)):
                 await module.terminate_module()
 
+        self.http_requests.send_chat_announcement("The integration code is no longer running :(")
+
         self.twitch_connection.stop_running()
 
 
@@ -111,23 +125,25 @@ class Integration(object):
         
         
         module_list = []
-        metadata_manager = Metadata_Manager()
+        metadata_manager = Metadata_Manager(self.http_requests)
+        general_twitch_functions = General_Twitch_Functions(self.http_requests)
 
         module_list.append(metadata_manager)
+        module_list.append(general_twitch_functions)
         
 
         print("Would you like sound effects enabled during this stream? y/n   [Default: y]")
         if input() != "n":
             audio_manager = Audio_Manager()
             module_list.append(audio_manager)
-            module_list.append(Sound_Manager(audio_manager))
+            module_list.append(Sound_Manager(audio_manager, self.http_requests))
 
         print("Would you like Text to Speech enabled during this stream? y/n   [Default: y]")
         if input() != "n":
             try:
-                module_list.append(TTS_Manager(self.hotkey_manager, audio_manager))
+                module_list.append(TTS_Manager(self.hotkey_manager, audio_manager, self.http_requests))
             except:
-                module_list.append(TTS_Manager(self.hotkey_manager, Audio_Manager()))
+                module_list.append(TTS_Manager(self.hotkey_manager, Audio_Manager(), self.http_requests))
 
         print("Pick the integration mode from the following options:")
         print("1: None. [Default]")
@@ -142,12 +158,12 @@ class Integration(object):
                 match game_options[selection]:
                     case "Minigolf":
                         print("\nMinigolf selected.\n")
-                        module_list.append(Minigolf_Manager(self.hotkey_manager))
+                        module_list.append(Minigolf_Manager(self.hotkey_manager, self.http_requests))
 
                 match game_options[selection]:
                     case "Rain World":
                         print("\nRain World selected.\n")
-                        module_list.append(Rain_World_Manager(self.hotkey_manager, audio_manager))
+                        module_list.append(Rain_World_Manager(self.hotkey_manager, audio_manager, self.http_requests))
 
         except:
             print("\nNo game selected.\n")

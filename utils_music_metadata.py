@@ -1,6 +1,9 @@
 import asyncio
 import hashlib
 
+
+from connection_http_requests import HTTP_Requests
+
 METADATA_FILENAME = "D:\\Streaming\\foobar2k_now_playing.txt"
 SONGNAME_FILENAME = "D:\\Streaming\\current_song_name.txt"
 ARTISTS_FILENAME = "D:\\Streaming\\current_song_artists.txt"
@@ -10,7 +13,10 @@ COPYRIGHT_FILENAME = "D:\\Streaming\\current_song_copyright.txt"
 
 
 class Metadata_Manager():
-    def __init__(self) -> None:
+    def __init__(self, http_requests:"HTTP_Requests") -> None:
+
+        self.http_requests = http_requests
+
         with open(METADATA_FILENAME, "rb") as file:
 
             self.metadata_hash = hashlib.md5(file.read()).hexdigest()

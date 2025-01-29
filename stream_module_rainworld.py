@@ -11,16 +11,12 @@ from twitchAPI.object.eventsub import ChannelChatMessageEvent, ChannelPointsCust
 
 # Used for function annotation. Not required at runtime.
 from utils_hotkey_manager import Hotkey_Manager
-from audiomodule_audio_player import Audio_Manager
+from audio_module_audio_player import Audio_Manager
+from connection_http_requests import HTTP_Requests
 
 
 
-##############################################################################################
-###############  Used for chat-controlled gameplay of minigolf games.          ###############
-###############  Designed for the games "Golf With Friends" and "Golf It!"     ###############
-###############  User should use the pause hotkey when it is not the chat's    ###############
-###############  turn and not alt-tab out of the game during the chat's turn.  ###############
-##############################################################################################
+# For Rain World
 
 
 class Reward_Titles(Enum):
@@ -36,11 +32,12 @@ class Reward_Titles(Enum):
 
 
 class Rain_World_Manager():
-    def __init__(self, hotkey_manager:"Hotkey_Manager", audio_manager:"Audio_Manager") -> None:
+    def __init__(self, hotkey_manager:"Hotkey_Manager", audio_manager:"Audio_Manager", http_requests:"HTTP_Requests") -> None:
         
         pyautogui.FAILSAFE = False
 
         self.audio_manager = audio_manager
+        self.http_requests = http_requests
 
 
         # Defines mouse movement vectors. ...and some limits to movement. Movement speed is measured in mickeys/0.02s
@@ -94,13 +91,13 @@ class Rain_World_Manager():
         self._rain_paused = not self._rain_paused
 
         if self._rain_paused:
-            self.audio_manager.play_sound("D:\\Streaming\\Streams\\Rain World\\Rain-World-Sounds-main\\UI\\UIPitch2.wav")
+            self.audio_manager.play_sound("D:\\Streaming\\Sound Effects\\Rain-World-Sounds-main\\UI\\UIPitch2.wav")
 
             with open("D:\\Streaming\\is_rain_timer_paused.txt", "w") as file:
                 file.write("Rain Timer:\nPaused!")
 
         else:
-            self.audio_manager.play_sound("D:\\Streaming\\Streams\\Rain World\\Rain-World-Sounds-main\\UI\\UIPitch1.wav")
+            self.audio_manager.play_sound("D:\\Streaming\\Sound Effects\\Rain-World-Sounds-main\\UI\\UIPitch1.wav")
 
             with open("D:\\Streaming\\is_rain_timer_paused.txt", "w") as file:
                 file.write("Rain Timer:\nRunning!")
@@ -165,8 +162,7 @@ class Rain_World_Manager():
                 with open("D:\\Streaming\\current_game_speed.txt", "w") as file:
                     file.write("Current game speed:\n3x")
 
-        self.audio_manager.play_sound("D:\\Streaming\\Streams\\Rain World\\Rain-World-Sounds-main\\UI\\UIWoodHit.wav")
-
+        self.audio_manager.play_sound("D:\\Streaming\\Sound Effects\\Rain-World-Sounds-main\\UI\\UIWoodHit.wav")
             
 
 
@@ -242,7 +238,6 @@ class Rain_World_Manager():
             else:
                 await asyncio.sleep(1)
                 self._counter += 1
-                print(self._counter)
 
 
                 if self._counter >= 300:
@@ -289,9 +284,6 @@ class Rain_World_Manager():
 
 
         print(f"Received point reward: {point_reward.event.reward.title}")
-
-        print(self._reward_titles.get(point_reward.event.reward.title))
-        print(self._reward_titles)
         
 
         # TTS messages are only placed on the queue. update() constantly awaits the next TTS message.

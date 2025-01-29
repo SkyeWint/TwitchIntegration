@@ -10,6 +10,7 @@ from twitchAPI.object.eventsub import ChannelChatMessageEvent
 
 # Used for function annotation. Not required at runtime.
 from utils_hotkey_manager import Hotkey_Manager
+from connection_http_requests import HTTP_Requests
 
 
 
@@ -23,9 +24,10 @@ from utils_hotkey_manager import Hotkey_Manager
 
 
 class Minigolf_Manager():
-    def __init__(self, hotkey_manager:"Hotkey_Manager") -> None:
+    def __init__(self, hotkey_manager:"Hotkey_Manager", http_requests:"HTTP_Requests") -> None:
         
         pyautogui.FAILSAFE = False
+        self.http_requests = http_requests
 
 
         # Defines mouse movement vectors. ...and some limits to movement. Movement speed is measured in mickeys/0.02s

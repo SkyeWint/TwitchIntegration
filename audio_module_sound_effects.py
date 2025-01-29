@@ -5,14 +5,16 @@ import random
 from twitchAPI.object.eventsub import ChannelChatMessageEvent
 
 # Used for function annotation. Not required at runtime.
-from audiomodule_audio_player import Audio_Manager
+from audio_module_audio_player import Audio_Manager
+from connection_http_requests import HTTP_Requests
 
 
 
 class Sound_Manager(object):
-    def __init__(self, audio_player:"Audio_Manager") -> None:
+    def __init__(self, audio_player:"Audio_Manager", http_requests:"HTTP_Requests") -> None:
         
         self._audio_player = audio_player
+        self.http_requests = http_requests
 
         # Creates dictionary of available commands as well as values to identify conditions for gameplay.
         self._last_message = None
@@ -30,9 +32,11 @@ class Sound_Manager(object):
         file_path_base = ".\\sound_effects\\"
 
         if variations > 1:
+
+            # Uses a list to populate possible variations based on file name, retrying possible variations until one exists and can be returned.
             variation_list = []
             for i in range(variations):
-                variation_list.append(i)
+                variation_list.append(i+1)
 
             while len(variation_list) > 0:
 
@@ -44,6 +48,7 @@ class Sound_Manager(object):
                     return file_path_base + sound_name + str(variation) + ".wav"
                 else:
 
+                    # Removes invalid files in variation list if given variation does not exist.
                     variation_list.pop(variation)
         else:
             if os.path.isfile(file_path_base + sound_name + ".ogg"):
@@ -78,6 +83,9 @@ class Sound_Manager(object):
                 if self._chat_commands.get(text) != self._chat_commands.get(self._last_message):
                     bonk = self._construct_filepath("bonk")
                     self._audio_player.play_sound(bonk)
+
+        if text == "bap":
+            self.http_requests.send_chat_message("Bop!", chat_message.event.message_id)
 
         
         self._last_message = text

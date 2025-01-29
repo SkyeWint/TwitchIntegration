@@ -5,7 +5,7 @@ from twitchAPI.helper import first
 from twitchAPI.oauth import UserAuthenticationStorageHelper
 from twitchAPI.type import AuthScope
 from twitchAPI.eventsub.websocket import EventSubWebsocket
-from twitchAPI.object.eventsub import ChannelChatMessageEvent, ChannelPointsCustomRewardRedemptionAddEvent
+from twitchAPI.object.eventsub import ChannelChatMessageEvent, ChannelPointsCustomRewardRedemptionAddEvent, ChannelRaidEvent
 
 
 #### General imports.
@@ -24,7 +24,7 @@ class Twitch_Connection():
 
         # Preps empty sets for all required callback functions from current modules.
         self.chat_message_callbacks = set()
-        self.point_reward_callbacks = set()
+        self.point_reward_redemption_callbacks = set()
 
         # Cycles through all modules passed to the twitch connection on initialization and adds them to the lists.
         for module in module_list:
@@ -34,7 +34,7 @@ class Twitch_Connection():
                 self.chat_message_callbacks.add(module.handle_chat_message)
 
             if callable(getattr(module, "handle_point_reward", None)):
-                self.point_reward_callbacks.add(module.handle_point_reward)
+                self.point_reward_redemption_callbacks.add(module.handle_point_reward)
 
 
         # Declares main relevant variables for future usage.
@@ -61,8 +61,17 @@ class Twitch_Connection():
 
     async def _on_point_redemption(self, data:"ChannelPointsCustomRewardRedemptionAddEvent") -> None:
 
-        for callback in self.point_reward_callbacks:
+        for callback in self.point_reward_redemption_callbacks:
             await callback(data)
+
+
+    async def _on_channel_raid(self, data:"ChannelRaidEvent") -> None:
+
+        for callback in self.raid_event_callbacks:
+            await callback(data)
+
+
+    
 
 
 
@@ -115,6 +124,7 @@ class Twitch_Connection():
         # Sets up all callback functions.
         await eventsub.listen_channel_chat_message(self.user.id, self.user.id, self._on_chat_message)
         await eventsub.listen_channel_points_custom_reward_redemption_add(self.user.id, self._on_point_redemption)
+        await eventsub.listen_channel_raid(self._on_channel_raid, to_broadcaster_user_id = self.user.id)
 
 
         while self.running:
