@@ -9,6 +9,8 @@ from audio_module_audio_player import Audio_Manager
 from connection_http_requests import HTTP_Requests
 
 
+SOUND_EFFECT_FOLDER_PATH_BASE = ".\\sound_effects\\"
+
 
 class Sound_Manager(object):
     def __init__(self, audio_player:"Audio_Manager", http_requests:"HTTP_Requests") -> None:
@@ -21,71 +23,76 @@ class Sound_Manager(object):
 
         self._chat_commands = {}
 
-        self._chat_commands.update(dict.fromkeys(["meow", "myar", "mrow", "mrowr"], "meow"))
-        self._chat_commands.update(dict.fromkeys(["bonk", "bap"], "bonk"))
+        # Creates list of commands based on sound effect folder names.
+        sound_effect_commands = os.listdir(SOUND_EFFECT_FOLDER_PATH_BASE)
+
+        for command in sound_effect_commands:
+            self._chat_commands.update(dict.fromkeys([command], command))
+
+        # Adds aliases to commands if desired.
+        self._chat_commands.update(dict.fromkeys(["myar", "mrow", "mrowr"], "meow"))
+        self._chat_commands.update(dict.fromkeys(["bap", "bop"], "bonk"))
+
 
     
 
-    # Verifies that a .ogg or .wav file exists based on a given sound name. Ogg files are always prioritized over Wav files.
-    # A number of variations can be provided to check a list of files in the sound_effects\ folder, with each file in the list following the format: [name][index][filetype].
-    def _construct_filepath(self, sound_name:"str", variations:"int" = 1) -> str:
-        file_path_base = ".\\sound_effects\\"
+    
+    # Randomly selects a .ogg or .wav sound effect from the provided folder path out of the valid files that exist in the folder.
+    def _select_sound_effect(self, folder_path) -> str:
+        
+        sound_effect_list = os.listdir(folder_path)
 
-        if variations > 1:
+        # Removes all files in the list that are not .wav or .ogg files.
+        for i, _ in enumerate(sound_effect_list):
+            while sound_effect_list[i][-4:] != ".wav" and sound_effect_list[i][-4:] != ".ogg":
+                sound_effect_list.pop(i)
 
-            # Uses a list to populate possible variations based on file name, retrying possible variations until one exists and can be returned.
-            variation_list = []
-            for i in range(variations):
-                variation_list.append(i+1)
 
-            while len(variation_list) > 0:
+        # Selects a random sound effect from the list, testing the file to ensure it is valid before returning the path for playing the file.
+              
+        while len(sound_effect_list) > 0:
 
-                variation = random.randint(0, len(variation_list) - 1)
+            sound = random.choice(sound_effect_list)
 
-                if os.path.isfile(file_path_base + sound_name + str(variation) + ".ogg"):
-                    return file_path_base + sound_name + str(variation) + ".ogg"
-                elif os.path.isfile(file_path_base + sound_name + str(variation) + ".wav"):
-                    return file_path_base + sound_name + str(variation) + ".wav"
-                else:
-
-                    # Removes invalid files in variation list if given variation does not exist.
-                    variation_list.pop(variation)
-        else:
-            if os.path.isfile(file_path_base + sound_name + ".ogg"):
-                return file_path_base + sound_name + ".ogg"
-            elif os.path.isfile(file_path_base + sound_name + ".wav"):
-                return file_path_base + sound_name + ".wav"
+            if os.path.isfile(folder_path + sound):
+                return folder_path + sound
+            else:
+                print(f"File {folder_path}{sound} does not actually exist!")
+                sound_effect_list.remove(sound)
         
         print("No matching files. Returning empty string.")
         return ""
-            
 
 
 
     ##### Public functions
 
 
+    # Plays a sound from the given sound effect folder, if the folder exists.
+    def play_random_sound_effect(self, folder_name):
+
+        if folder_name in os.listdir(SOUND_EFFECT_FOLDER_PATH_BASE): 
+            folder_path = SOUND_EFFECT_FOLDER_PATH_BASE + f"{self._chat_commands.get(folder_name)}\\"
+
+            self._audio_player.play_sound(self._select_sound_effect(folder_path))
+
+
+
     # Receives chat message event and directs it according to the matching command based on self._chat_commands.
     async def handle_chat_message(self, chat_message:"ChannelChatMessageEvent") -> None:
-        
+
+
         # Normalizes username to lowercase and removes punctuation for flexible command matching.
         text = str.lower(chat_message.event.message.text)
         text.translate(str.maketrans('', '', string.punctuation))
 
-        match self._chat_commands.get(text): 
+        if text != self._last_message:
+            self.play_random_sound_effect(self._chat_commands.get(text))
 
-            case "meow":
-                if self._chat_commands.get(text) != self._chat_commands.get(self._last_message):
-                    meow = self._construct_filepath("meow", variations=17)
-                    self._audio_player.play_sound(meow)
-
-            case "bonk":
-                if self._chat_commands.get(text) != self._chat_commands.get(self._last_message):
-                    bonk = self._construct_filepath("bonk")
-                    self._audio_player.play_sound(bonk)
 
         if text == "bap":
             self.http_requests.send_chat_message("Bop!", chat_message.event.message_id)
 
         
         self._last_message = text
+

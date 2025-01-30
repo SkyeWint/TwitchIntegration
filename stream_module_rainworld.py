@@ -3,6 +3,7 @@ import pydirectinput
 import asyncio
 import pyautogui
 import numpy
+import random
 from enum import Enum
 
 from utils_keycodes import *
@@ -24,8 +25,8 @@ class Reward_Titles(Enum):
     SPEED_UP = "Make the game FASTER"
     SLOW_DOWN = "Make the game slower..."
     PAUSE = "Pause the Rain!!"
-    SPAWN_DLL = "Spawn Daddy Long Legs"
-    SPAWN_SNAILS = "Spawn Snails"
+    SPAWN_DLL = "Spawn DLL"
+    SPAWN_SNAILS = "Spawn A Few Snails"
 
 
 
@@ -55,9 +56,8 @@ class Rain_World_Manager():
         # Speed altering stream variables.
         self._gamespeed = 1  # Max of 9, should increment game speed by 0.25
         self._gamespeed_mod = 0
-        self._rain_paused = False
         self._reset_gamespeed = False
-        hotkey_manager.create_hotkey("Reset Rain World Gamespeed", "left shift+r", self._encountered_echo, force_assignment = True)
+        hotkey_manager.create_hotkey("Reset Rain World Gamespeed", "left alt+r", self._encountered_echo, force_assignment = True)
 
 
         self._chat_commands = {}
@@ -88,19 +88,21 @@ class Rain_World_Manager():
 
         await hold_and_release_key(NUMPAD_0, 0.01)
 
-        self._rain_paused = not self._rain_paused
+        self.audio_manager.play_sound("D:\\Streaming\\Sound Effects\\Rain-World-Sounds-main\\UI\\UIPitch2.wav")
 
-        if self._rain_paused:
-            self.audio_manager.play_sound("D:\\Streaming\\Sound Effects\\Rain-World-Sounds-main\\UI\\UIPitch2.wav")
+        with open("D:\\Streaming\\is_rain_timer_paused.txt", "w") as file:
+            file.write("Rain Timer:\nPaused!")
 
-            with open("D:\\Streaming\\is_rain_timer_paused.txt", "w") as file:
-                file.write("Rain Timer:\nPaused!")
 
-        else:
-            self.audio_manager.play_sound("D:\\Streaming\\Sound Effects\\Rain-World-Sounds-main\\UI\\UIPitch1.wav")
+        await asyncio.sleep(15)
+        
 
-            with open("D:\\Streaming\\is_rain_timer_paused.txt", "w") as file:
-                file.write("Rain Timer:\nRunning!")
+        await hold_and_release_key(NUMPAD_0, 0.01)
+
+        self.audio_manager.play_sound("D:\\Streaming\\Sound Effects\\Rain-World-Sounds-main\\UI\\UIPitch1.wav")
+
+        with open("D:\\Streaming\\is_rain_timer_paused.txt", "w") as file:
+            file.write("Rain Timer:\nRunning!")
 
 
 
@@ -209,13 +211,31 @@ class Rain_World_Manager():
     async def terminate_module(self) -> None:
         self._running = False
 
+        self.http_requests.delete_reward(reward_title = Reward_Titles.SPEED_UP.value)
+        self.http_requests.delete_reward(reward_title = Reward_Titles.SLOW_DOWN.value)
+        self.http_requests.delete_reward(reward_title = Reward_Titles.PAUSE.value)
+        self.http_requests.delete_reward(reward_title = Reward_Titles.SPAWN_SNAILS.value)
+        self.http_requests.delete_reward(reward_title = Reward_Titles.SPAWN_DLL.value)
+
 
     async def update(self) -> None:
         
+
+        # Initializes rivulet speed rewards...
+        try:
+            self.http_requests.create_reward(Reward_Titles.SPEED_UP.value, cost = 200, background_color = "#0D3EB2", prompt = "Knocks the game speed up by 0.25 for 30 seconds. Can stack with other speed modifiers, doesn't go higher than 3x speed.")
+            self.http_requests.create_reward(Reward_Titles.SLOW_DOWN.value, cost = 100, background_color = "#0D3EB2", prompt = "Knocks the game speed down- by 0.25 for 30 seconds. Can stack with other speed modifiers, doesn't go lower than 1x speed.")
+            self.http_requests.create_reward(Reward_Titles.PAUSE.value, cost = 100, global_cooldown_seconds = 15, background_color = "#0D3EB2", prompt = "Pauses the rain timer for 15 seconds to give Skye just a little more time...")
+            self.http_requests.create_reward(Reward_Titles.SPAWN_SNAILS.value, cost = 200, background_color = "#0D3EB2", prompt = "Spawns anywhere from 1 to 5 snails. They aren't named though, sorry.")
+            self.http_requests.create_reward(Reward_Titles.SPAWN_DLL.value, cost = 1000, background_color = "#0D3EB2", prompt = "Spawns a DLL. It isn't named though, sorry.")
+
+        except Exception as e:
+            print("Encountered exception while attempting to create Rewards.")
+
         self._counter = 0
 
         with open("D:\\Streaming\\time_until_speed_up.txt", "w") as file:
-            text = f"Game speed increases in\n{5 - int(self._counter / 60)} minutes."
+            text = f"Game speed increases in\n{7 - int(self._counter / 60)} minutes."
             file.write(text)
 
         print("Wrote initial file.")
@@ -227,6 +247,9 @@ class Rain_World_Manager():
 
                 await self._alter_gamespeed(0, True)
                 self._counter = 0
+                with open("D:\\Streaming\\time_until_speed_up.txt", "w") as file:
+                        text = f"Game speed increases in\n{7 - int(self._counter / 60)} minutes."
+                        file.write(text)
 
                 await asyncio.sleep(1)
                 continue
@@ -240,11 +263,11 @@ class Rain_World_Manager():
                 self._counter += 1
 
 
-                if self._counter >= 300:
+                if self._counter >= 420:
                     self._counter = 0
                     await self._alter_gamespeed(1, True)
                     with open("D:\\Streaming\\time_until_speed_up.txt", "w") as file:
-                        text = f"Game speed increases in\n{5 - int(self._counter / 60)} minutes."
+                        text = f"Game speed increases in\n{7 - int(self._counter / 60)} minutes."
                         file.write(text)
 
                 elif self._counter % 60 == 0:
@@ -252,7 +275,7 @@ class Rain_World_Manager():
                     print(str(int(self._counter / 60)))
 
                     with open("D:\\Streaming\\time_until_speed_up.txt", "w") as file:
-                        text = f"Game speed increases in\n{5 - int(self._counter / 60)} minutes."
+                        text = f"Game speed increases in\n{7 - int(self._counter / 60)} minutes."
                         file.write(text)
     
 
@@ -301,7 +324,11 @@ class Rain_World_Manager():
                 await self._pause_rain_timer()
 
             case "dll":
-                await hold_and_release_key(D, 0.01)
+                print("Spawning DLL")
+                await hold_and_release_key(NUMPAD_MINUS, 0.01)
 
             case "snails":
-                await hold_and_release_key(S, 0.01)
+                for i in range(random.randint(1, 5)):
+                    print(f"Spawning snail number {i}")
+
+                    await hold_and_release_key(NUMPAD_PERIOD, 0.01)

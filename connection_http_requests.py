@@ -7,13 +7,14 @@ from utils_config import get_config
 
 class _TWITCH_URI(Enum):
     
-    USER_INFO = "https://api.twitch.tv/helix/users"
-    CHANNEL_INFO = "https://api.twitch.tv/helix/channels"
-    SEND_CHAT_MESSAGE = "https://api.twitch.tv/helix/chat/messages"
-    SEND_CHAT_ANNOUNCEMENT = "https://api.twitch.tv/helix/chat/announcements"
-    SEND_SHOUTOUT = "https://api.twitch.tv/helix/chat/shoutouts"
-    RUN_COMMERCIAL = "https://api.twitch.tv/helix/channels/commercial"
-    UPDATE_REDEMPTION_STATUS = "https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions"
+    USER_ENDPOINT = "https://api.twitch.tv/helix/users"
+    CHANNEL_ENDPOINT = "https://api.twitch.tv/helix/channels"
+    CHAT_MESSAGE_ENDPOINT = "https://api.twitch.tv/helix/chat/messages"
+    CHAT_ANNOUNCEMENT_ENDPOINT = "https://api.twitch.tv/helix/chat/announcements"
+    CHAT_SHOUTOUT_ENDPOINT = "https://api.twitch.tv/helix/chat/shoutouts"
+    COMMERCIAL_ENDPOINT = "https://api.twitch.tv/helix/channels/commercial"
+    POINT_REDEMPTIONS_ENDPOINT = "https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions"
+    REWARD_ENDPOINT = "https://api.twitch.tv/helix/channel_points/custom_rewards"
 
 TOKENS = 'user_token.json'
 
@@ -52,7 +53,7 @@ class HTTP_Requests(object):
         if reply_target != "":
             payload.update(dict.fromkeys(["reply_parent_message_id"], reply_target))
 
-        res = requests.post(url = _TWITCH_URI.SEND_CHAT_MESSAGE.value, data = json.dumps(payload), headers = self.get_http_request_headers(True))
+        res = requests.post(url = _TWITCH_URI.CHAT_MESSAGE_ENDPOINT.value, data = json.dumps(payload), headers = self.get_http_request_headers(True))
 
         if res.status_code == 200:
             res = res.json()
@@ -85,9 +86,7 @@ class HTTP_Requests(object):
         }
 
 
-        print(f"DEBUG: \n{payload}\n\n")
-
-        res = requests.post(url = f"{_TWITCH_URI.SEND_CHAT_ANNOUNCEMENT.value}{query}", data = json.dumps(payload), headers = self.get_http_request_headers(True))
+        res = requests.post(url = f"{_TWITCH_URI.CHAT_ANNOUNCEMENT_ENDPOINT.value}{query}", data = json.dumps(payload), headers = self.get_http_request_headers(True))
 
 
         if res.status_code == 204:
@@ -113,7 +112,7 @@ class HTTP_Requests(object):
 
         query = query[:-1]
 
-        res = requests.post(url = f"{_TWITCH_URI.SEND_SHOUTOUT.value}{query}", headers = self.get_http_request_headers())
+        res = requests.post(url = f"{_TWITCH_URI.CHAT_SHOUTOUT_ENDPOINT.value}{query}", headers = self.get_http_request_headers())
 
 
         if res.status_code == 204:
@@ -121,12 +120,94 @@ class HTTP_Requests(object):
 
         else:
             raise Exception(f"Request failed; received status code {res.status_code} with error {res.text}")
+
+
+
+    # Creatres a channel point reward.
+    # All other parameters will be blank or not enabled unless a value is specified.
+    def create_reward(self, reward_title:"str", # Title of reward to be created.
+                cost:"int" = 1, # Cost of reward in channel points.
+                prompt:"str" = None, # Description of reward when selected.
+                background_color:"str" = None, # Color is specified using hex.
+                user_input_required:"bool" = False, # If True, user must input text when redeeming the reward.
+                max_per_stream:"int" = 0, # Value must be positive if specified.
+                max_per_user_per_stream:"int" = 0, # Value must be positive if specified.
+                global_cooldown_seconds:"int" = 0 # Value must be positive if specified.
+                ) -> "str": # Returns string with the created reward's ID.
+
+
+        query = f"?broadcaster_id={self.user_id}"
+
+        payload = {
+            "title": reward_title,
+            "cost": cost
+        }
+
+        if prompt != None:
+            payload.update(dict.fromkeys(["prompt"], prompt))
+
+        if background_color != None:
+            payload.update(dict.fromkeys(["background_color"], background_color))
+
+        if user_input_required != None:
+            payload.update(dict.fromkeys(["is_user_input_required"], user_input_required))
+
+        if max_per_stream > 0:
+            payload.update(dict.fromkeys(["is_max_per_stream_enabled"], True))
+            payload.update(dict.fromkeys(["max_per_stream"], max_per_stream))
+
+        if max_per_user_per_stream > 0:
+            payload.update(dict.fromkeys(["is_max_per_user_per_stream_enabled"], True))
+            payload.update(dict.fromkeys(["max_per_user_per_stream"], max_per_user_per_stream))
+
+        if global_cooldown_seconds > 0:
+            payload.update(dict.fromkeys(["is_global_cooldown_enabled"], True))
+            payload.update(dict.fromkeys(["global_cooldown_seconds"], global_cooldown_seconds))
+
+
+        res = requests.post(url = f"{_TWITCH_URI.REWARD_ENDPOINT.value}{query}", data = json.dumps(payload), headers = self.get_http_request_headers(True))
+
+
+        if res.status_code == 200:
+            return res.json()["data"][0]["id"]
+
+
+        else:
+            raise Exception(f"Request failed; received status code {res.status_code} with error {res.text}")
         
-    
+
+
+    # Deletes a channel point reward that is created by this integration.
+    # Can use the reward ID or the reward name. If the ID is provided, it will supercede the reward name.
+    def delete_reward(self, reward_id:"str" = "", reward_title:"str" = "") -> None:
+        
+        if reward_title != "" and reward_id == "":
+            reward_id = self.get_reward_id(reward_title)
+
+        query_params = {
+            "broadcaster_id": self.user_id,
+            "id": reward_id
+        }
+
+        query = "?"
+        for k,v in query_params.items():
+            query = query + k + "=" + v + "&"
+
+        query = query[:-1]
+
+        res = requests.delete(url = f"{_TWITCH_URI.REWARD_ENDPOINT.value}{query}", headers = self.get_http_request_headers())
+
+        if res.status_code == 204:
+            return
+
+        else:
+            raise Exception(f"Request failed; received status code {res.status_code} with error {res.text}")
+        
+
 
     # Updates the redemption status of a channel point reward. Requires speciic reward redemption ID along with the point reward ID. 
     # Possible statuses to declare are "CANCELED" and "FULFILLED". "CANCELED" will refund the channel points to the person that redeemed the reward.
-    def update_point_redemption_status(self, redemption_id:"str", reward_id:"str", status:"str"):
+    def update_point_redemption_status(self, redemption_id:"str", reward_id:"str", status:"str") -> None:
 
         query_params = {
             "id": redemption_id,
@@ -146,7 +227,7 @@ class HTTP_Requests(object):
         }
 
 
-        res = requests.patch(url = f"{_TWITCH_URI.UPDATE_REDEMPTION_STATUS.value}{query}", data = payload, headers = self.get_http_request_headers(True))
+        res = requests.patch(url = f"{_TWITCH_URI.POINT_REDEMPTIONS_ENDPOINT.value}{query}", data = payload, headers = self.get_http_request_headers(True))
 
 
         if res.status_code == 200:
@@ -175,7 +256,7 @@ class HTTP_Requests(object):
             "length": length
         }
 
-        res = requests.post(url = f"{_TWITCH_URI.RUN_COMMERCIAL.value}", data = payload, headers = self.get_http_request_headers(True))
+        res = requests.post(url = f"{_TWITCH_URI.COMMERCIAL_ENDPOINT.value}", data = payload, headers = self.get_http_request_headers(True))
 
         if res.status_code == 200:
             res_data = res.json()["data"][0]
@@ -194,10 +275,37 @@ class HTTP_Requests(object):
 
         query = f"?login={username}"
 
-        res = requests.get(url = f"{_TWITCH_URI.USER_INFO.value}{query}", headers = self.get_http_request_headers())
+        res = requests.get(url = f"{_TWITCH_URI.USER_ENDPOINT.value}{query}", headers = self.get_http_request_headers())
         
         if res.status_code == 200:
             return res.json()["data"][0]["id"]
+
+        else:
+            raise Exception(f"Request failed; received status code {res.status_code} with error {res.text}")
+        
+
+
+    # Generic function to obtain a reward ID based the reward title.
+    def get_reward_id(self, reward_title:"str") -> str:
+
+        query_params = {
+            "broadcaster_id": self.user_id,
+        }
+
+        query = "?"
+        for k,v in query_params.items():
+            query = query + k + "=" + v + "&"
+
+        query = query[:-1]
+
+        res = requests.get(url = f"{_TWITCH_URI.REWARD_ENDPOINT.value}{query}", headers = self.get_http_request_headers())
+        
+        if res.status_code == 200:
+            for reward in res.json()["data"]:
+                if reward["title"] == reward_title:
+                    return reward["id"]
+                
+            return ""
 
         else:
             raise Exception(f"Request failed; received status code {res.status_code} with error {res.text}")
@@ -209,13 +317,14 @@ class HTTP_Requests(object):
 
         query = f"?broadcaster_id={channel_id}"
 
-        res = requests.get(url = f"{_TWITCH_URI.CHANNEL_INFO.value}{query}", headers = self.get_http_request_headers())
+        res = requests.get(url = f"{_TWITCH_URI.CHANNEL_ENDPOINT.value}{query}", headers = self.get_http_request_headers())
 
         if res.status_code == 200:
             return res.json()["data"][0]
 
         else:
             raise Exception(f"Request failed; received status code {res.status_code} with error {res.text}")
+    
 
         
 
@@ -223,10 +332,9 @@ class HTTP_Requests(object):
     # Generic function for headers of all http requests sent to twitch URIs. Returns dict, needs to be submitted to http requests as **kwargs instead of being passed directly.
     def get_http_request_headers(self, incl_content_type:"bool" = False) -> dict:
 
+
         with open(TOKENS, "r") as file:
             tokens = json.load(file)
-
-            print(f"Auth token is: {tokens['token']}\nRefresh token is: {tokens['refresh']}")
 
 
             if incl_content_type:

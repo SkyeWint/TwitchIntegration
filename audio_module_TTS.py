@@ -66,6 +66,7 @@ class TTS_Manager(object):
 
 
 
+
     # Gets the next TTS message from the queue and processes it while TTS is not paused.
     async def _next_TTS_message(self) -> None:
         
@@ -77,9 +78,10 @@ class TTS_Manager(object):
                 if not self._running:
                     print("No longer listening to TTS message.")
                     return
-                await asyncio.sleep(1)
+                await asyncio.sleep(3)
+            except queue.ShutDown:
+                raise queue.ShutDown
             else:
-                #print(f"TTS message detected: {text}")
                 break
 
         # Adjusts rate according to remaining messages in queue as well as length of message. Only for pyTTS audio.
@@ -241,15 +243,29 @@ class TTS_Manager(object):
 
     async def terminate_module(self) -> None:
 
+        # Deletes TTS reward so it is no longer redeemable.
+        self.http_requests.delete_reward(reward_title = Reward_Titles.NORMAL_TTS.value)
+        
         self._running = False
         self._TTS_queue.shutdown(immediate = True)
         self._audio_player.skip_TTS()
+
+        
 
         # Waits for 3 seconds to allow queue to shut down properly.
         await asyncio.sleep(3)
     
 
     async def update(self) -> None:
+
+        # Creates TTS reward, to allow it to be redeemed while the code is active.
+        try:
+            self.http_requests.create_reward(Reward_Titles.NORMAL_TTS.value, user_input_required= True, background_color = "#392e5c", prompt = "Play text to speech! You can pick voices by typing a voice code before text, even in the middle of a sentence. The voice codes are [m], [f], [g], and [r]. For example: \"This is [g] a message.\"")
+
+        except Exception as e:
+            print("!!Attempting to create the TTS reward resulted in the following exception!!")
+            print(e)
+
         self._running = True
         while self._running:
             if not self._paused:

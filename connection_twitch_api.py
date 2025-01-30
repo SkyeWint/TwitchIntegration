@@ -25,6 +25,7 @@ class Twitch_Connection():
         # Preps empty sets for all required callback functions from current modules.
         self.chat_message_callbacks = set()
         self.point_reward_redemption_callbacks = set()
+        self.raid_event_callbacks = set()
 
         # Cycles through all modules passed to the twitch connection on initialization and adds them to the lists.
         for module in module_list:
@@ -35,6 +36,10 @@ class Twitch_Connection():
 
             if callable(getattr(module, "handle_point_reward", None)):
                 self.point_reward_redemption_callbacks.add(module.handle_point_reward)
+
+            if callable(getattr(module, "handle_raid", None)):
+                self.raid_event_callbacks.add(module.handle_raid)
+
 
 
         # Declares main relevant variables for future usage.

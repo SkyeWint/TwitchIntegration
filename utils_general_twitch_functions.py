@@ -11,7 +11,7 @@ from twitchAPI.object.eventsub import ChannelChatMessageEvent, ChannelPointsCust
 
 class Reward_Titles(Enum):
 
-    RUN_COMMERCIAL = "Subject everyone to AIDS"
+    RUN_COMMERCIAL = "Subject the people to ADS!"
 
 
 class General_Twitch_Functions():
@@ -19,18 +19,24 @@ class General_Twitch_Functions():
         
         self.http_requests = http_requests
 
+        # General variables used for maintaining update and preventing repeat chat commands (if desired).
         self._running = True
         self._last_command = ""
 
-        # Chat-based commands.
+        # Chat-based command list for the match case.
         self._chat_commands = {}
 
-
-
-        # Point rewards
+        # List of point reward strings for the match case.
         self._reward_titles = {}
         
         self._reward_titles.update(dict.fromkeys([Reward_Titles.RUN_COMMERCIAL.value], "commercial"))
+
+
+
+        
+        # Used to identify how long it takes before another commercial break can be run.
+        self.commercial_redeem_wait_time = 0
+
 
 
 
@@ -47,6 +53,12 @@ class General_Twitch_Functions():
         while self._running:
 
             await asyncio.sleep(1)
+
+            if self.commercial_redeem_wait_time > 0:
+                self.commercial_redeem_wait_time -= 1
+
+                if self.commercial_redeem_wait_time == 0:
+                    pass # Unpause commercial point redeem.
 
 
     # Receives chat message event and directs it according to the matching command based on self._chat_commands.
@@ -78,11 +90,11 @@ class General_Twitch_Functions():
         # TTS messages are only placed on the queue. update() constantly awaits the next TTS message.
         match self._reward_titles.get(point_reward.event.reward.title): 
             case "commercial":
-                if wait_time == 0:
+                if self.commercial_redeem_wait_time == 0:
                     try:
-                        wait_time = self.http_requests.start_commercial(point_reward.event.user_name)
+                        self.commercial_redeem_wait_time = self.http_requests.start_commercial(point_reward.event.user_name)
 
-                        if wait_time == 0:
+                        if self.commercial_redeem_wait_time == 0:
                             self.http_requests.update_point_redemption_status(point_reward.event.id, point_reward.event.reward.id, "CANCELED")
                         else:
                             self.http_requests.update_point_redemption_status(point_reward.event.id, point_reward.event.reward.id, "FULFILLED")
@@ -106,8 +118,14 @@ class General_Twitch_Functions():
     # Receives a raid event and responds appropriately, by shouting out the raider and thanking them for the raid.
     async def handle_raid(self, raid_info:"ChannelRaidEvent") -> None:
 
-        self.http_requests.send_shoutout(raid_info.event.from_broadcaster_user_id)
 
-        channel_info = self.http_requests.get_channel_info(raid_info.event.from_broadcaster_user_id)
+        if raid_info.event.viewers > 1:
 
-        self.http_requests.send_chat_message(f"{raid_info.event.from_broadcaster_user_name}! Thank you so much for dropping off all {raid_info.event.viewers} people here! I hope that you had fun playing {channel_info["game_name"]}!")
+            if raid_info.event.viewers >= 5:
+                self.http_requests.send_shoutout(raid_info.event.from_broadcaster_user_id)
+
+            channel_info = self.http_requests.get_channel_info(raid_info.event.from_broadcaster_user_id)
+
+            self.http_requests.send_chat_message(f"{raid_info.event.from_broadcaster_user_name}! Thank you for dropping off your crew of {raid_info.event.viewers} people here! I hope that you had fun playing {channel_info["game_name"]}!")
+
+        return
