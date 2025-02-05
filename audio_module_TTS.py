@@ -22,9 +22,10 @@ from connection_http_requests import HTTP_Requests
 ######### Enum List #########
 
 
+# If you want different titles for the point rewards set up by this code, specify them here.
 class Reward_Titles(Enum):
 
-    NORMAL_TTS = get_config("INITIALIZATION").get("tts_reward_title")
+    NORMAL_TTS = "Text to Speech" 
 
 
 

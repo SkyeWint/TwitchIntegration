@@ -4,8 +4,9 @@ from enum import Enum
 
 from connection_twitch_api import Twitch_Connection
 from connection_http_requests import HTTP_Requests
+from connection_obs_websocket import OBS_WS_Connection
 
-from utils_config import validate_config_file
+from utils_config import validate_config_file, generate_config
 from utils_hotkey_manager import Hotkey_Manager
 from utils_music_metadata import Metadata_Manager
 from utils_general_twitch_functions import General_Twitch_Functions
@@ -43,6 +44,7 @@ class Integration(object):
         
         self.hotkey_manager = Hotkey_Manager()
         self.http_requests = HTTP_Requests()
+        self.obs_websocket = OBS_WS_Connection(self.http_requests)
 
         # Sets up kill switch.
         self.running = True
@@ -58,6 +60,8 @@ class Integration(object):
         
         self.twitch_connection = Twitch_Connection(self.module_list)
         await self.twitch_connection.initialize_twitch()
+        
+        await self.obs_websocket.init_connection()
 
         self.http_requests.init_user_id()
 
@@ -125,8 +129,11 @@ class Integration(object):
         
         
         module_list = []
-        metadata_manager = Metadata_Manager(self.http_requests)
+
+        metadata_manager = Metadata_Manager(self.http_requests, self.obs_websocket)
         general_twitch_functions = General_Twitch_Functions(self.http_requests)
+        
+        audio_manager = None
 
         module_list.append(metadata_manager)
         module_list.append(general_twitch_functions)
@@ -140,10 +147,10 @@ class Integration(object):
 
         print("Would you like Text to Speech enabled during this stream? y/n   [Default: y]")
         if input() != "n":
-            try:
-                module_list.append(TTS_Manager(self.hotkey_manager, audio_manager, self.http_requests))
-            except:
+            if audio_manager == None:
                 module_list.append(TTS_Manager(self.hotkey_manager, Audio_Manager(), self.http_requests))
+            else:
+                module_list.append(TTS_Manager(self.hotkey_manager, audio_manager, self.http_requests))
 
         print("Pick the integration mode from the following options:")
         print("1: None. [Default]")
@@ -186,7 +193,9 @@ if __name__ == "__main__":
 
     print("Welcome to SkyeWint's Twitch Integration program!\n")
 
-    validate_config_file()
+    # Validates config file and forces regeneration if it is invalid.
+    if validate_config_file() == False:
+        generate_config()
 
     program = Integration()
 

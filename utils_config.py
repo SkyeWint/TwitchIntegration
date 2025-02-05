@@ -11,57 +11,53 @@ CONFIG_FILENAME = 'config.ini'
 def get_config(section:"str") -> dict:
     config = configparser.ConfigParser()
     config.read(CONFIG_FILENAME)
-    try:
-        return dict(config.items(section))
-    except:
-        print("\n!! Config file invalid !!\n")
-        print(f"Attempted to get {section} from {config} but cannot read section.")
-        generate_config()
+    return dict(config.items(section))
 
 
 # Verifies if config.ini is present in the program folder and that it has the fields necessary.
-# If config.ini is not present or has incorrect contents, runs generate_config() from config_generator.py
-# Otherwise, if config.ini is present, confirms if user wants to generate a new config or if it is fine.
-def validate_config_file() -> None:
-    try:
-        config = configparser.ConfigParser()
+# Retuns True if config.ini present and has all necessary fields. Otherwise returns False.
+def validate_config_file() -> bool:
 
-        if not os.path.isfile(CONFIG_FILENAME):
-            raise Exception("ERROR: Config file does not exist.")
+    valid = True
+    config = configparser.ConfigParser()
 
-        config.read(CONFIG_FILENAME)
+    if not os.path.isfile(CONFIG_FILENAME):
+        print("ERROR: Config file does not exist.")
+        return not valid
 
-        # Verify section headers.
-        sections = config.sections()
-        if sections != [
-            "INITIALIZATION"
-            ]:
-            raise Exception("ERROR: Config headers incorrect.")
+    config.read(CONFIG_FILENAME)
+
+    # Verify section headers.
+    sections = config.sections()
+    if sections != [
+        "INITIALIZATION"
+        ]:
+        print("ERROR: Config headers incorrect.")
+        return not valid
+    
+    time.sleep(random.uniform(0.2,0.6))
+
+    # Defining required keys and any required values.
+    placeholder_sections = [
+            {
+                'client_id': None,
+                'client_secret': None,
+                'scope': None,
+                'login_name': None,
+                'obs_ws_password': None
+            }
+    ]
+    
+    
+    # Replace section headers in list with their corresponding section dicts, then validate section keys.
+    for i, section in enumerate(sections):
+        sections[i] = dict(config.items(section))
         
-        time.sleep(random.uniform(0.2,0.6))
-
-        # Defining required keys and any required values.
-        placeholder_sections = [
-                {
-                    'client_id': None,
-                    'client_secret': None,
-                    'scope': None,
-                    'login_name': None,
-                    'tts_reward_title': None
-                }
-        ]
-        
-        
-        # Replace section headers in list with their corresponding section dicts, then validate section keys.
-        for i, section in enumerate(sections):
-            sections[i] = dict(config.items(section))
-            
-            if sections[i].keys() != placeholder_sections[i].keys():
-                raise Exception("ERROR: Config keys incorrect.")
-
-    except Exception as e:
-        print(str(e) + "\n")
-        generate_config()
+        if sections[i].keys() != placeholder_sections[i].keys():
+            print("ERROR: Config keys incorrect.")
+            return not valid
+    
+    return valid
 
 
 # Generates new config file if there are any issues with the existing config file.
@@ -78,8 +74,9 @@ def generate_config() -> None:
     print('\nPlease input the login name for the Twitch account you are livestreaming from.')
     login_name = input()
 
-    print('\nIf you plan to use the Text To Speech part of this code, please input the title of your TTS point redemption.')
-    tts_reward_title = input()
+    print('\nPlease input the password for your OBS Websocket Server, if you are using OBS websockets for any reason.')
+    print('\nThis can be located under OBS -> Tools -> Websocket Server Settings -> Show Connect Info.')
+    obs_ws_password = input()
 
     print('\nPlease input your desired scope.')
     print('If you do not know your intended scope, press Enter without any input for the default scope.')
@@ -97,15 +94,21 @@ def generate_config() -> None:
         'client_secret': secret,
         'scope': scope,
         'login_name': login_name,
-        'tts_reward_title': tts_reward_title
+        'obs_ws_password': obs_ws_password
         }
 
     with open(CONFIG_FILENAME, 'w') as configFile:
         config.write(configFile)
 
-    print("\nconfig.ini has been generated. Press Enter to close the program.")
-    input()
-    exit()
+    if __name__ == "__main__":
+        print("\nconfig.ini has been generated. Press Enter to close the program.")
+        input()
+        exit()
+    else:
+        print("\nconfig.ini has been generated. Press Enter to continue.")
+        input()
+        return
+
 
 
 if __name__ == "__main__":
