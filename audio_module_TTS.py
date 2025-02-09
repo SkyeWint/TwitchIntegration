@@ -80,8 +80,8 @@ class TTS_Manager(object):
                     print("No longer listening to TTS message.")
                     return
                 await asyncio.sleep(3)
-            except queue.ShutDown:
-                raise queue.ShutDown
+            except Exception as e:
+                raise e
             else:
                 break
 
@@ -273,9 +273,11 @@ class TTS_Manager(object):
                 print("Waiting for next TTS message")
                 try:
                     await self._next_TTS_message()
-                except Exception as e:
+                except queue.ShutDown as e:
                     print(f"TTS Queue is shut down. Exception received: {e}")
                     break
+                except Exception as e:
+                    raise e
             else:
                 # Less frequent checking occurs while paused to improve performance.
                 await asyncio.sleep(5)

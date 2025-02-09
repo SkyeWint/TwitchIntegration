@@ -7,7 +7,7 @@ from pygame import mixer
 from tkinter import *
 
 class Audio_Manager():
-    def __init__(self) -> None:
+    def __init__(self, window_name) -> None:
 
         mixer.init()
 
@@ -17,6 +17,7 @@ class Audio_Manager():
 
         # Sets up tkinter window to send audio through.
         self._window = Tk()
+        self._window.title(window_name)
         self._tk_label = Label(self._window, text="Stream audio player window.")
         self._tk_label.pack()
 

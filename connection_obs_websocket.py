@@ -54,7 +54,7 @@ class OBS_WS_Connection(object):
             req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceUuid": sourceUuid, "filterName": "Scroll", "filterEnabled": False})
             await self._obs_ws.call(req)
 
-        elif not res.responseData["filterEnabled"]:
+        elif speed > 0 and not res.responseData["filterEnabled"]:
             req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceUuid": sourceUuid, "filterName": "Scroll", "filterEnabled": True})
             await self._obs_ws.call(req)
 
