@@ -27,55 +27,75 @@ class OBS_WS_Connection(object):
 
         print("Connected to OBS and identified, awaiting instructions.")
 
+        # Test
 
         return True
+    
+
+    # Causes a given TTS character to be moved on or off screen based on their name.
+    async def tts_character_toggle(self, character_name:"str", active:"bool"):
+
+        character_name + " TTS Moving Part - Up"
+        character_name + " TTS Moving Part - Down"
+
+        # Identifies current filter settings.
+        if active:
+            # Moves character up.
+            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "TTS", "filterName": character_name + " TTS Static Part - Up", "filterEnabled": True})
+            await self._obs_ws.call(req)
+
+            await asyncio.sleep(0.3)
+
+            # Enables audio-based movement of character's moving part. 
+            # Must be enabled AFTER the move is complete (300ms) because it will snap the moving part of the character to the base coordinate without the move animation.
+            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "TTS Audio", "filterName": character_name + " TTS Audio Move 1", "filterEnabled": True})
+            await self._obs_ws.call(req)
+            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "TTS Audio", "filterName": character_name + " TTS Audio Move 2", "filterEnabled": True})
+            await self._obs_ws.call(req)
+
+        else:
+            # Disabled audio-based movement of head.
+            # Must be disabled BEFORE the character is moved down because it will force the moving part of the character to stay at its base coordinate rather than traveling along with the rest of the character.
+            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "TTS Audio", "filterName": character_name + " TTS Audio Move 1", "filterEnabled": False})
+            await self._obs_ws.call(req)
+            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "TTS Audio", "filterName": character_name + " TTS Audio Move 2", "filterEnabled": False})
+            await self._obs_ws.call(req)
+
+            # Moves character down.
+            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "TTS", "filterName": character_name + " TTS Static Part - Down", "filterEnabled": True})
+            await self._obs_ws.call(req)
+
     
 
     # Updates the music metadata filters after the text is changed in the .txt file.
     async def update_music_metadata_scroll(self, source_name:"str", speed:"int") -> bool:
 
-        # Identifies scene item ID based on source name. Must be in Music Metadata scene.
-        req = simpleobsws.Request("GetSceneItemId", {"sceneName": "Music Metadata", "sourceName": source_name})
-        res = await self._obs_ws.call(req)
-
-        itemId = res.responseData["sceneItemId"]
-
-        # Identifies scene item source's Uuid based on item Id.
-        req = simpleobsws.Request("GetSceneItemSource", {"sceneName": "Music Metadata", "sceneItemId": itemId})
-        res = await self._obs_ws.call(req)
-
-        sourceUuid = res.responseData["sourceUuid"]
 
         # Identifies current filter settings.
-        req = simpleobsws.Request("GetSourceFilter", {"sourceUuid": sourceUuid, "filterName": "Scroll"})
+        req = simpleobsws.Request("GetSourceFilter", {"sourceName": source_name, "filterName": "Scroll"})
         res = await self._obs_ws.call(req)
 
         if speed == 0 and res.responseData["filterEnabled"]:
-            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceUuid": sourceUuid, "filterName": "Scroll", "filterEnabled": False})
+            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": source_name, "filterName": "Scroll", "filterEnabled": False})
             await self._obs_ws.call(req)
 
         elif speed > 0 and not res.responseData["filterEnabled"]:
-            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceUuid": sourceUuid, "filterName": "Scroll", "filterEnabled": True})
+            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": source_name, "filterName": "Scroll", "filterEnabled": True})
             await self._obs_ws.call(req)
 
-        filterSettings = res.responseData["filterSettings"]
+        filter_settings = res.responseData["filterSettings"]
+
 
         # Ensures the filter settings are not the same to save on an unnecessary websocket call.
-        if filterSettings["speed_x"] == speed:
+        if filter_settings["speed_x"] == speed:
             return
 
-        filterSettings["speed_x"] = speed
+        filter_settings["speed_x"] = speed
 
 
         # Updates scroll speed.
-        req = simpleobsws.Request("SetSourceFilterSettings", {"sourceUuid": sourceUuid, "filterName": "Scroll", "filterSettings": filterSettings})
+        req = simpleobsws.Request("SetSourceFilterSettings", {"sourceName": source_name, "filterName": "Scroll", "filterSettings": filter_settings})
         res = await self._obs_ws.call(req)
-
-
-
-        
-
-
 
 
     

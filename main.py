@@ -148,9 +148,9 @@ class Integration(object):
         print("Would you like Text to Speech enabled during this stream? y/n   [Default: y]")
         if input() != "n":
             if audio_manager == None:
-                module_list.append(TTS_Manager(self.hotkey_manager, Audio_Manager(), self.http_requests))
+                module_list.append(TTS_Manager(self.hotkey_manager, Audio_Manager(), self.http_requests, self.obs_websocket))
             else:
-                module_list.append(TTS_Manager(self.hotkey_manager, audio_manager, self.http_requests))
+                module_list.append(TTS_Manager(self.hotkey_manager, audio_manager, self.http_requests, self.obs_websocket))
 
         print("Pick the integration mode from the following options:")
         print("1: None. [Default]")

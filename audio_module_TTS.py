@@ -1,5 +1,6 @@
 import math
 import random
+import numpy
 import queue
 import asyncio
 from syllables import estimate as estimate_syllables
@@ -17,6 +18,7 @@ import pyttsx3
 from utils_hotkey_manager import Hotkey_Manager
 from audio_module_audio_player import Audio_Manager
 from connection_http_requests import HTTP_Requests
+from connection_obs_websocket import OBS_WS_Connection
 
 
 ######### Enum List #########
@@ -39,10 +41,11 @@ class Voice_Codes(Enum):
 
 
 class TTS_Manager(object):
-    def __init__(self, hotkey_manager:"Hotkey_Manager", audio_player:"Audio_Manager", http_requests:"HTTP_Requests") -> None:
+    def __init__(self, hotkey_manager:"Hotkey_Manager", audio_player:"Audio_Manager", http_requests:"HTTP_Requests", obs_ws:"OBS_WS_Connection") -> None:
 
         self._audio_player = audio_player
         self.http_requests = http_requests
+        self._obs_ws = obs_ws
 
         # Base pyTTS objects, baserate is used for speech speed.
         self._pyTTS = pyttsx3.init()
@@ -54,7 +57,7 @@ class TTS_Manager(object):
         hotkey_manager.create_hotkey("Stop TTS Button", "right shift+backspace", self._skip_current_TTS)
 
         # Used for generating files.
-        self._file_path_base = ".\\sound_effects\\"
+        self._file_path_base = ".\\tts\\"
 
         self._TTS_queue = queue.Queue(0)
         self._TTS_parts = []
@@ -71,7 +74,7 @@ class TTS_Manager(object):
     # Gets the next TTS message from the queue and processes it while TTS is not paused.
     async def _next_TTS_message(self) -> None:
         
-        # Allows concurrent functions to execute while checking for TTS messages every second.
+        # Allows concurrent functions to execute while checking for TTS messages every 3 seconds.
         while True:
             try:
                 text = self._TTS_queue.get(timeout = 0.02)
@@ -88,14 +91,23 @@ class TTS_Manager(object):
         # Adjusts rate according to remaining messages in queue as well as length of message. Only for pyTTS audio.
         rate = int(math.sqrt(self._TTS_queue.qsize() + 15) * 45)
         rate += int(self._estimate_syllables(text) * 0.5)
+        rate += random.randint(-25, 25) # Introduces random drift to talking speed, makes things a bit more interesting.
+        rate = numpy.clip(rate, 150, 250) # Limits extent of talking speed to +/-50 from base rate of 200.
+        
 
         self._TTS_parts = self._split_TTS_parts(text)
 
         TTS_path_list = await self._generate_TTS_parts(rate)
 
+        await self._obs_ws.tts_character_toggle("Chat Iterator", True)
+
+        await asyncio.sleep(0.3)
+
         # Plays all TTS parts in order before getting the next message to process.
         for TTS_Part in TTS_path_list:
             await self._audio_player.play_TTS(TTS_Part)
+
+        await self._obs_ws.tts_character_toggle("Chat Iterator", False)
 
 
     # Generates a series of TTS files based on the list of TTS parts held by the TTS_Manager object. Returns a list of file paths to the generated TTS files.
