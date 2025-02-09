@@ -90,9 +90,6 @@ class TTS_Manager(object):
 
         # Adjusts rate according to remaining messages in queue as well as length of message. Only for pyTTS audio.
         rate = int(math.sqrt(self._TTS_queue.qsize() + 15) * 45)
-        rate += int(self._estimate_syllables(text) * 0.5)
-        rate += random.randint(-25, 25) # Introduces random drift to talking speed, makes things a bit more interesting.
-        rate = numpy.clip(rate, 150, 250) # Limits extent of talking speed to +/-50 from base rate of 200.
         
 
         self._TTS_parts = self._split_TTS_parts(text)
@@ -118,50 +115,55 @@ class TTS_Manager(object):
 
         #print(f"DEBUG: TTS_parts = '{self._TTS_parts}'")
 
-        for i, TTS in enumerate(self._TTS_parts):
+        for i, tts in enumerate(self._TTS_parts):
 
             #print(f"DEBUG: '{TTS}' <-- Message | Index--> '{str(i)}'")
 
             await asyncio.sleep(0.1) # Provides a period for other concurrent functions to run as needed.
 
-            
+            # Adjusts talking rate to prevent pyTTS from talking too slowly for long messagse while also having random drift to speech.
+            temp_rate = pyTTS_rate + random.randint(-60, 60) # Introduces random drift to talking speed, makes things a bit more interesting.
+            temp_rate += int(self._estimate_syllables(tts) * 0.5)
+            temp_rate = numpy.clip(temp_rate, 100, 275) # Limits extent of talking speed variance.
+
+            #print(f"DEBUG: Rate for TTS part is {temp_rate}.")
 
             # Checks if a voice code exists at the start of the TTS part and maintains the full string if none are detected.
-            if TTS.split(maxsplit = 1)[0] not in [k.value for k in Voice_Codes]:
+            if tts.split(maxsplit = 1)[0] not in [k.value for k in Voice_Codes]:
 
                 # Randomly selects voice type.
                 voice_type = random.randint(0,len(Voice_Codes)-2)
                 if voice_type in [0,1]:
-                    TTS_file_path = self.generate_pyTTS(TTS, voice = voice_type, rate = pyTTS_rate, TTS_fragment_index=i)
+                    TTS_file_path = self.generate_pyTTS(tts, voice = voice_type, rate = temp_rate, TTS_fragment_index=i)
                 elif voice_type == 2:
-                    TTS_file_path = self.generate_gTTS(TTS, TTS_fragment_index=i)
+                    TTS_file_path = self.generate_gTTS(tts, TTS_fragment_index=i)
                 TTS_path_list.append(TTS_file_path)
                 continue
                 
                 
 
             # If a voice code does exist at the start of the string, the voice code is split and used to identify the voice to use, while the remainder of the string is passed to TTS generation.
-            TTS = TTS.split(maxsplit = 1)
+            tts = tts.split(maxsplit = 1)
 
-            if len(TTS) < 2:
+            if len(tts) < 2:
                 continue
 
-            match TTS[0]:
+            match tts[0]:
                 case Voice_Codes.PYTTS_MALE.value:
-                    TTS_file_path = self.generate_pyTTS(TTS[1], voice = 0, rate = pyTTS_rate, TTS_fragment_index=i)
+                    TTS_file_path = self.generate_pyTTS(tts[1], voice = 0, rate = temp_rate, TTS_fragment_index=i)
 
                 case Voice_Codes.PYTTS_FEMALE.value:
-                    TTS_file_path = self.generate_pyTTS(TTS[1], voice = 1, rate = pyTTS_rate, TTS_fragment_index=i)
+                    TTS_file_path = self.generate_pyTTS(tts[1], voice = 1, rate = temp_rate, TTS_fragment_index=i)
 
                 case Voice_Codes.GTTS.value:
-                    TTS_file_path = self.generate_gTTS(TTS[1], TTS_fragment_index=i)
+                    TTS_file_path = self.generate_gTTS(tts[1], TTS_fragment_index=i)
 
                 case Voice_Codes.RANDOM.value:
                     voice_type = random.randint(0,len(Voice_Codes)-2)
                     if voice_type in [0,1]:
-                        TTS_file_path = self.generate_pyTTS(TTS[1], voice = voice_type, rate = pyTTS_rate, TTS_fragment_index=i)
+                        TTS_file_path = self.generate_pyTTS(tts[1], voice = voice_type, rate = temp_rate, TTS_fragment_index=i)
                     elif voice_type == 2:
-                        TTS_file_path = self.generate_gTTS(TTS[1], TTS_fragment_index=i)
+                        TTS_file_path = self.generate_gTTS(tts[1], TTS_fragment_index=i)
 
             #print(f"DEBUG: File path generated: {TTS_file_path}")
 
