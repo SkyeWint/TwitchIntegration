@@ -126,6 +126,6 @@ class General_Twitch_Functions():
 
             channel_info = self.http_requests.get_channel_info(raid_info.event.from_broadcaster_user_id)
 
-            self.http_requests.send_chat_message(f"{raid_info.event.from_broadcaster_user_name}! Thank you for dropping off your crew of {raid_info.event.viewers} people here! I hope that you had fun playing {channel_info["game_name"]}!")
+            self.http_requests.send_chat_message(f"{raid_info.event.from_broadcaster_user_name}! Thank you for dropping off your crew of {raid_info.event.viewers} people here! I hope that you had fun playing {channel_info['game_name']}!")
 
         return

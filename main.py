@@ -68,28 +68,29 @@ class Integration(object):
         self.http_requests.send_chat_announcement("The integration code is now connected and running! TTS, sound effects, and other fun things will now work! skyewiGormsip")
 
         # Adds all selected stream module update() functions and websocket connection to Task Manager to execute in concurrent loops. Maintains in a loop until self.tg no longer has tasks to manage.
-        try:
-            async with asyncio.TaskGroup() as self.tg:
+        #try:
 
-                kill_switch = self.tg.create_task(self.kill_switch())
-                self.tasks.add(kill_switch)
-                kill_switch.add_done_callback(self.tasks.discard)
+        async with asyncio.TaskGroup() as self.tg:
 
-                connection_task = self.tg.create_task(self.twitch_connection.run())
-                self.tasks.add(connection_task)
-                connection_task.add_done_callback(self.tasks.discard)
+            kill_switch = self.tg.create_task(self.kill_switch())
+            self.tasks.add(kill_switch)
+            kill_switch.add_done_callback(self.tasks.discard)
 
-                for module in self.module_list:
-                    if callable(getattr(module, "update", None)):
-                        update_task = self.tg.create_task(module.update())
-                        self.tasks.add(update_task)
-                        update_task.add_done_callback(self.tasks.discard)
+            connection_task = self.tg.create_task(self.twitch_connection.run())
+            self.tasks.add(connection_task)
+            connection_task.add_done_callback(self.tasks.discard)
 
-        except Exception as e:
+            for module in self.module_list:
+                if callable(getattr(module, "update", None)):
+                    update_task = self.tg.create_task(module.update())
+                    self.tasks.add(update_task)
+                    update_task.add_done_callback(self.tasks.discard)
 
-            print(f"Encountered exception {e}")
+        #except Exception as e:
 
-            self.http_requests.send_chat_message("Something went wrong! Please tell Skye to check the exception log! skyewiPlank")
+            #print(f"Encountered exception {e}")
+
+            #self.http_requests.send_chat_message("Something went wrong! Please tell Skye to check the exception log! skyewiPlank")
 
         exit()
 

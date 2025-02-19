@@ -7,22 +7,23 @@ These files are what I use to allow Twitch Chat to control my keyboard and mouse
 
 To run this code, you need to install Python 3.13.0 from the [Python website](https://www.python.org/downloads/ "https://www.python.org/downloads/"). You will also need to install the following list of Python modules using [Pip](https://pip.pypa.io/en/stable/getting-started/ "https://pip.pypa.io/en/stable/getting-started/") by running these commands in the command line:
 
-- py --version (to ensure that python is installed)  
-- py -m pip --version (to ensure that pip is working)  
-- py -m pip install twitchAPI
-- py -m pip install keyboard  
-- py -m pip install pydirectinput  
-- py -m pip install pydirectinput-rgx  
-- py -m pip install pyautogui  
-- py -m pip install pynput  
-- py -m pip install numpy  
-- py -m pip install pygame  
-- py -m pip install tk  
-- py -m pip install gtts  
-- py -m pip install pyttsx3  
-- py -m pip install syllables
-- py -m pip install pydub  
-- py -m pip install audioop-lts  
+- python --version (to ensure that python is installed)  
+- python -m pip --version (to ensure that pip is working)  
+- python -m pip install twitchAPI
+- python -m pip install simpleobsws
+- python -m pip install keyboard  
+- python -m pip install pydirectinput  
+- python -m pip install pydirectinput-rgx  
+- python -m pip install pyautogui  
+- python -m pip install pynput  
+- python -m pip install numpy  
+- python -m pip install pygame  
+- python -m pip install tk  
+- python -m pip install gtts  
+- python -m pip install pyttsx3  
+- python -m pip install syllables  
+- python -m pip install pydub  
+- python -m pip install audioop-lts  
 
 Additionally, you will need to install ffmpeg and add it to PATH for pydub t owork. I followed [this guide](https://phoenixnap.com/kb/ffmpeg-windows) to do it myself.  
 

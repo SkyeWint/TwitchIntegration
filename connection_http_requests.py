@@ -234,7 +234,7 @@ class HTTP_Requests(object):
             res = res.json()
 
             if res["data"][0]["status"] != status:
-                print(f"REDEMPTION NOT UPDATED PROPERLY, CURRENT STATUS IS {res["data"][0]["status"]}!!!!")
+                print(f"REDEMPTION NOT UPDATED PROPERLY, CURRENT STATUS IS {res['data'][0]['status']}!!!!")
 
 
         else:
@@ -262,7 +262,7 @@ class HTTP_Requests(object):
             res_data = res.json()["data"][0]
             next_ad_time = [int(res_data["retry_after"] / 60), res_data["retry_after"] % 60]
             if next_ad_time > 0:
-                self.send_chat_message(f"{username} has inflicted {res_data["length"]} seconds of advertisements upon you! How AWFUL. Fortunately, nobody can do it again for another {next_ad_time[0]} minutes and {next_ad_time[1]} seconds...")
+                self.send_chat_message(f"{username} has inflicted {res_data['length']} seconds of advertisements upon you! How AWFUL. Fortunately, nobody can do it again for another {next_ad_time[0]} minutes and {next_ad_time[1]} seconds...")
 
         else:
             raise Exception(f"Request failed; received status code {res.status_code} with error {res.text}")
