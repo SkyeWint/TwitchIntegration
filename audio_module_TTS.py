@@ -33,36 +33,35 @@ class Reward_Titles(Enum):
 
 class Voice_Codes(Enum):
 
-    PYTTS_MASCULINE = "[m]" # Voice IDs: 0, 5, 8, 11, 18, 32, 39, 58, 78
-    PYTTS_FEMININE = "[f]"  # Voice IDs: 7, 10, 12, 13,17, 19, 21, 31, 34, 47, 77, 79
+    PYTTS_MASCULINE = "[m]" # Voice IDs: 0, 5, 11, 18, 32, 39, 58, 78
+    PYTTS_FEMININE = "[f]"  # Voice IDs: 7, 10, 12, 13, 17, 19, 21, 31, 34, 47, 77, 79
     GTTS = "[g]"
     RANDOM = "[r]"
-    ENGLISH_DAVID = "m"         # 0  No
-    GERMAN_KARSTEN = "m"        # 5  No
-    GERMAN_KATJA = "f"          # 7  No
-    GERMAN_STEFAN = "m"         # 8  No
-    ENGLISH_CATHERINE = "f"     # 10 No
-    ENGLISH_JAMES = "m"         # 11 No
-    ENGLISH_MATILDA = "f"       # 12 No
-    ENGLISH_EVA_CA = "f"        # 13 No
-    ENGLISH_SUSAN = "f"         # 17 No
-    ENGLISH_SEAN = "m"          # 18 No
-    ENGLISH_HEERA = "f"         # 19 No
-    ENGLISH_RAVI = "[ravi]"     # 20 Yes
-    ENGLISH_EVA_US = "f"        # 21 No
-    SPANISH_LAURA = "[laura]"   # 24 Yes
-    FRENCH_NATHALIE = "f"       # 31 No
-    FRENCH_GUILLAUME = "m"      # 32 No
-    FRENCH_JULIE = "f"          # 34 No
-    CROATIAN_MATEJ = "m"        # 39 No
-    ITALIAN_COSIMO = "[cosimo]" # 42 Maybe
-    JAPANESE_SAYAKA = "f"       # 47 No
-    MALAY_RIZWAN = "[rizwan]"   # 49 Yes
-    ROMANIAN_ANDREI = "m"       # 58 No
-    SLOVAK_FILIP = "[filip]"    # 61 Yes
-    ENGLISH_HAZEL = "f"         # 77 No
-    BULGARIAN_IVAN = "m"        # 78 No
-    ENGLISH_ZIRA = "f"          # 79 No
+    ENGLISH_DAVID = "m"         # 0  
+    GERMAN_KARSTEN = "m"        # 5  
+    GERMAN_KATJA = "f"          # 7  
+    ENGLISH_CATHERINE = "f"     # 10 
+    ENGLISH_JAMES = "m"         # 11 
+    ENGLISH_MATILDA = "f"       # 12 
+    ENGLISH_EVA_CA = "f"        # 13 
+    ENGLISH_SUSAN = "f"         # 17 
+    ENGLISH_SEAN = "m"          # 18 
+    ENGLISH_HEERA = "f"         # 19 
+    ENGLISH_RAVI = "[ravi]"     # 20 
+    ENGLISH_EVA_US = "f"        # 21 
+    SPANISH_LAURA = "[laura]"   # 24 
+    FRENCH_NATHALIE = "f"       # 31 
+    FRENCH_GUILLAUME = "m"      # 32 
+    FRENCH_JULIE = "f"          # 34 
+    CROATIAN_MATEJ = "m"        # 39 
+    ITALIAN_COSIMO = "[cosimo]" # 42 
+    JAPANESE_SAYAKA = "f"       # 47 
+    MALAY_RIZWAN = "[rizwan]"   # 49 
+    ROMANIAN_ANDREI = "m"       # 58
+    SLOVAK_FILIP = "[filip]"    # 61 
+    ENGLISH_HAZEL = "f"         # 77 
+    BULGARIAN_IVAN = "m"        # 78 
+    ENGLISH_ZIRA = "f"          # 79 
 
 
 
@@ -140,7 +139,7 @@ class TTS_Manager(object):
     async def _generate_TTS_parts(self, pyTTS_rate:"int") -> list:
         
         TTS_path_list = []
-        pytts_masc_voices = [0, 5, 8, 11, 18, 32, 39, 58, 78]
+        pytts_masc_voices = [0, 5, 11, 18, 32, 39, 58, 78]
         pytts_fem_voices = [7, 10, 12, 13,17, 19, 21, 31, 34, 47, 77, 79]
 
         #print(f"DEBUG: TTS_parts = '{self._TTS_parts}'")
@@ -298,6 +297,7 @@ class TTS_Manager(object):
         if voice < -1:
             voice = random.randint(0, len(pyTTS_voices) - 1)
 
+        #print(f'DEBUG: Index of selected voice is {voice}')
         
         self._pyTTS.setProperty("voice", pyTTS_voices[voice].id)
         self._pyTTS.setProperty("rate", rate)
@@ -366,6 +366,8 @@ class TTS_Manager(object):
 
 
     async def test(self):
+
+        test_phrase = ""
 
         pass
 
