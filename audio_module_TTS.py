@@ -3,6 +3,7 @@ import random
 import numpy
 import queue
 import asyncio
+import string
 from syllables import estimate as estimate_syllables
 from enum import Enum
 
@@ -37,31 +38,31 @@ class Voice_Codes(Enum):
     PYTTS_FEMININE = "[f]"  # Voice IDs: 7, 10, 12, 13, 17, 19, 21, 31, 34, 47, 77, 79
     GTTS = "[g]"
     RANDOM = "[r]"
-    ENGLISH_DAVID = "m"         # 0  
-    GERMAN_KARSTEN = "m"        # 5  
-    GERMAN_KATJA = "f"          # 7  
-    ENGLISH_CATHERINE = "f"     # 10 
-    ENGLISH_JAMES = "m"         # 11 
-    ENGLISH_MATILDA = "f"       # 12 
-    ENGLISH_EVA_CA = "f"        # 13 
-    ENGLISH_SUSAN = "f"         # 17 
-    ENGLISH_SEAN = "m"          # 18 
-    ENGLISH_HEERA = "f"         # 19 
+    ENGLISH_DAVID = "[m]"         # 0  
+    GERMAN_KARSTEN = "[m]"        # 5  
+    GERMAN_KATJA = "[f]"          # 7  
+    ENGLISH_CATHERINE = "[f]"     # 10 
+    ENGLISH_JAMES = "[m]"         # 11 
+    ENGLISH_MATILDA = "[f]"       # 12 
+    ENGLISH_EVA_CA = "[f]"        # 13 
+    ENGLISH_SUSAN = "[f]"         # 17 
+    ENGLISH_SEAN = "[m]"          # 18 
+    ENGLISH_HEERA = "[f]"         # 19 
     ENGLISH_RAVI = "[ravi]"     # 20 
-    ENGLISH_EVA_US = "f"        # 21 
+    ENGLISH_EVA_US = "[f]"        # 21 
     SPANISH_LAURA = "[laura]"   # 24 
-    FRENCH_NATHALIE = "f"       # 31 
-    FRENCH_GUILLAUME = "m"      # 32 
-    FRENCH_JULIE = "f"          # 34 
-    CROATIAN_MATEJ = "m"        # 39 
+    FRENCH_NATHALIE = "[f]"       # 31 
+    FRENCH_GUILLAUME = "[m]"      # 32 
+    FRENCH_JULIE = "[f]"          # 34 
+    CROATIAN_MATEJ = "[m]"        # 39 
     ITALIAN_COSIMO = "[cosimo]" # 42 
-    JAPANESE_SAYAKA = "f"       # 47 
+    JAPANESE_SAYAKA = "[f]"       # 47 
     MALAY_RIZWAN = "[rizwan]"   # 49 
-    ROMANIAN_ANDREI = "m"       # 58
+    ROMANIAN_ANDREI = "[m]"       # 58
     SLOVAK_FILIP = "[filip]"    # 61 
-    ENGLISH_HAZEL = "f"         # 77 
-    BULGARIAN_IVAN = "m"        # 78 
-    ENGLISH_ZIRA = "f"          # 79 
+    ENGLISH_HAZEL = "[f]"         # 77 
+    BULGARIAN_IVAN = "[m]"        # 78 
+    ENGLISH_ZIRA = "[f]"          # 79 
 
 
 
@@ -139,14 +140,36 @@ class TTS_Manager(object):
     async def _generate_TTS_parts(self, pyTTS_rate:"int") -> list:
         
         TTS_path_list = []
-        pytts_masc_voices = [0, 5, 11, 18, 32, 39, 58, 78]
-        pytts_fem_voices = [7, 10, 12, 13,17, 19, 21, 31, 34, 47, 77, 79]
+        pytts_masc_voices = {
+            "English_David": 0, 
+            "German_Karsten": 5, 
+            "English_James": 11, 
+            "English_Sean": 18, 
+            "French_Guillame": 32, 
+            "Croatian_Matej": 39, 
+            "Romanian_Andrei": 58, 
+            "Bulgarian_Ivan": 78
+        }
+        pytts_fem_voices = {
+            "German_Katja": 7, 
+            "English_Catherine": 10, 
+            "English_Matilda": 12, 
+            "English_Eva_CA": 13,
+            "English_Susan": 17, 
+            "English_Heera": 19, 
+            "English_Eva_US": 21, 
+            "French_Nathalie": 31, 
+            "French_Julie": 34, 
+            "Japanese_Sayaka": 47, 
+            "English_Hazel": 77, 
+            "English_Zira": 79
+        }
 
-        #print(f"DEBUG: TTS_parts = '{self._TTS_parts}'")
+        print(f"DEBUG: TTS_parts = '{self._TTS_parts}'")
 
         for i, tts in enumerate(self._TTS_parts):
 
-            #print(f"DEBUG: '{TTS}' <-- Message | Index--> '{str(i)}'")
+            print(f"DEBUG: '{tts}' <-- Message | Index--> '{str(i)}'")
 
             await asyncio.sleep(0.1) # Provides a period for other concurrent functions to run as needed.
 
@@ -157,16 +180,33 @@ class TTS_Manager(object):
 
             #print(f"DEBUG: Rate for TTS part is {temp_rate}.")
 
+            tts = tts.translate(str.maketrans('', '', '<>'))
+
             # Checks if a voice code exists at the start of the TTS part and maintains the full string if none are detected.
             if tts.split(maxsplit = 1)[0] not in [k.value for k in Voice_Codes]:
 
+                # Verifies that text still exists if problematic characters are all removed.
+                if tts.translate(str.maketrans('', '', string.punctuation)).strip() == "":
+                    continue
+
                 # Randomly selects voice type.
-                voice_type = random.randint(len(self._pyTTS.getProperty('voices')) * -1 , 0)
-                if voice_type < 0:
-                    TTS_file_path = self.generate_pyTTS(tts, voice = voice_type * -1, rate = temp_rate, TTS_fragment_index=i)
-                elif voice_type == 0:
+                voice_type = random.randint(1, 3)
+                if voice_type == 1:
+                    voice = random.choice(list(pytts_masc_voices))
+                    print(f'Randomly selected voice is {voice}')
+                    TTS_file_path = self.generate_pyTTS(tts, voice = pytts_masc_voices.get(voice), rate = temp_rate, TTS_fragment_index=i)
+
+                elif voice_type == 2:
+                    voice = random.choice(list(pytts_fem_voices))
+                    print(f'Randomly selected voice is {voice}')
+                    TTS_file_path = self.generate_pyTTS(tts, voice = pytts_fem_voices.get(voice), rate = temp_rate, TTS_fragment_index=i)
+
+                elif voice_type == 3:
+                    print(f'Randomly selected voice is google')
                     TTS_file_path = self.generate_gTTS(tts, TTS_fragment_index=i)
                 TTS_path_list.append(TTS_file_path)
+
+                print(f"DEBUG: File path generated: {TTS_file_path}")
                 continue
                 
                 
@@ -177,14 +217,21 @@ class TTS_Manager(object):
             if len(tts) < 2:
                 continue
 
+            # Removes problematic characters and verifies that text still exists afterwards.
+            
+            if tts[1].translate(str.maketrans('', '', string.punctuation)).strip() == "":
+                continue
+
             match tts[0]:
                 case Voice_Codes.PYTTS_MASCULINE.value:
-                    voice = random.choice(pytts_masc_voices)
-                    TTS_file_path = self.generate_pyTTS(tts[1], voice = voice, rate = temp_rate, TTS_fragment_index=i)
+                    voice = random.choice(list(pytts_masc_voices))
+                    print(f'Randomly selected male voice is {voice}')
+                    TTS_file_path = self.generate_pyTTS(tts[1], voice = pytts_masc_voices.get(voice), rate = temp_rate, TTS_fragment_index=i)
 
                 case Voice_Codes.PYTTS_FEMININE.value:
-                    voice = random.choice(pytts_fem_voices)
-                    TTS_file_path = self.generate_pyTTS(tts[1], voice = voice, rate = temp_rate, TTS_fragment_index=i)
+                    voice = random.choice(list(pytts_fem_voices))
+                    print(f'Randomly selected female voice is {voice}')
+                    TTS_file_path = self.generate_pyTTS(tts[1], voice = pytts_fem_voices.get(voice), rate = temp_rate, TTS_fragment_index=i)
 
                 case Voice_Codes.GTTS.value:
                     TTS_file_path = self.generate_gTTS(tts[1], TTS_fragment_index=i)
@@ -192,13 +239,18 @@ class TTS_Manager(object):
                 case Voice_Codes.RANDOM.value:
                     voice_type = random.randint(1, 3)
                     if voice_type == 1:
-                        voice = random.choice(pytts_masc_voices)
-                        TTS_file_path = self.generate_pyTTS(tts[1], voice = voice, rate = temp_rate, TTS_fragment_index=i)
+                        voice = random.choice(list(pytts_masc_voices))
+                        print(f'Randomly selected voice is {voice}')
+                        TTS_file_path = self.generate_pyTTS(tts[1], voice = pytts_masc_voices.get(voice), rate = temp_rate, TTS_fragment_index=i)
+
                     elif voice_type == 2:
-                        voice = random.choice(pytts_fem_voices)
-                        TTS_file_path = self.generate_pyTTS(tts[1], voice = voice, rate = temp_rate, TTS_fragment_index=i)
+                        voice = random.choice(list(pytts_fem_voices))
+                        print(f'Randomly selected voice is {voice}')
+                        TTS_file_path = self.generate_pyTTS(tts[1], voice = pytts_fem_voices.get(voice), rate = temp_rate, TTS_fragment_index=i)
+
                     elif voice_type == 3:
-                        TTS_file_path = self.generate_gTTS(tts, TTS_fragment_index=i)
+                        print(f'Randomly selected voice is google')
+                        TTS_file_path = self.generate_gTTS(tts[1], TTS_fragment_index=i)
 
                 case Voice_Codes.ENGLISH_RAVI.value:
                     TTS_file_path = self.generate_pyTTS(tts[1], voice = 20, rate = temp_rate, TTS_fragment_index=i)
@@ -215,7 +267,7 @@ class TTS_Manager(object):
                 case Voice_Codes.SLOVAK_FILIP.value:
                     TTS_file_path = self.generate_pyTTS(tts[1], voice = 61, rate = temp_rate, TTS_fragment_index=i)
 
-            #print(f"DEBUG: File path generated: {TTS_file_path}")
+            print(f"DEBUG: File path generated: {TTS_file_path}")
 
             TTS_path_list.append(TTS_file_path)
         
@@ -280,9 +332,10 @@ class TTS_Manager(object):
     def generate_gTTS(self, text:"str", slow:"bool" = False, filename:"str" = "speech", TTS_fragment_index:"int" = 1) -> str:
         file_path = self._file_path_base + filename + str(TTS_fragment_index) + ".mp3"
 
+        print(f"DEBUG: Text is {text}, file path is {file_path}")
+
         speech = gTTS(text = text, lang = "en", slow = False)
         speech.save(file_path)
-
 
 
         return file_path
@@ -291,6 +344,8 @@ class TTS_Manager(object):
     # Generates TTS file using pyTTS voices. Voices are random by default.
     def generate_pyTTS(self, text:"str", voice:"int" = -1, rate:"int" = 200, filename:"str" = "speech", TTS_fragment_index:"int" = 1) -> str:
         file_path = self._file_path_base + filename + str(TTS_fragment_index) + ".wav"
+        
+        print(f"DEBUG: Text is {text}")
 
         pyTTS_voices = self._pyTTS.getProperty('voices')
 
@@ -305,6 +360,8 @@ class TTS_Manager(object):
         self._pyTTS.save_to_file(text, file_path)
         self._pyTTS.runAndWait()
         self._pyTTS.stop()
+
+        print(f'DEBUG: Text generated is: {text}')
 
         return file_path
     
@@ -330,7 +387,7 @@ class TTS_Manager(object):
 
         # Creates TTS reward, to allow it to be redeemed while the code is active.
         try:
-            self.http_requests.create_reward(Reward_Titles.NORMAL_TTS.value, user_input_required= True, background_color = "#392e5c", prompt = "Play text to speech! You can pick voices by typing a voice code before text, even in the middle of a sentence. The voice codes are [m], [f], [g], and [r]. For example: \"This is [g] a message.\"")
+            self.http_requests.create_reward(Reward_Titles.NORMAL_TTS.value, user_input_required= True, background_color = "#392e5c", prompt = "Play text to speech! You can pick voices by typing a voice code before text, even in the middle of a sentence. You can see the voice codes by typing !voicecodes. For example: \"This is [g] a message.\"")
 
         except Exception as e:
             print("!!Attempting to create the TTS reward resulted in the following exception!!")

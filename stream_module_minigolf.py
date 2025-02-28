@@ -181,7 +181,7 @@ class Minigolf_Manager():
         
         # Normalizes username to lowercase and removes punctuation for flexible command matching.
         text = str.lower(chat_message.event.message.text)
-        text.translate(str.maketrans('', '', string.punctuation))
+        text = text.translate(str.maketrans('', '', string.punctuation))
 
         if self._paused:
             return

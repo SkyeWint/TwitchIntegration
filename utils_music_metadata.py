@@ -98,10 +98,6 @@ class Metadata_Manager():
             print(f"Failed to write song information to new file. Current metadata is: {self.current_metadata}")
             print(f"Encountered exception: \n{e}")
 
-        
-
-
-        
 
 
     ##### Public functions
@@ -112,6 +108,8 @@ class Metadata_Manager():
 
     async def update(self) -> None:
         
+        await self.split_metadata()
+
         self._running = True
         while self._running:
             await asyncio.sleep(1)
@@ -130,6 +128,7 @@ class Metadata_Manager():
                     
 
 
+## Test code
 
 if __name__ == "__main__":
 
