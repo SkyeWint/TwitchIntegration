@@ -103,7 +103,7 @@ class TTS_Manager(object):
         # Allows concurrent functions to execute while checking for TTS messages every 3 seconds.
         while True:
             try:
-                text = self._TTS_queue.get(timeout = 0.02)
+                next_message = self._TTS_queue.get(timeout = 0.02)
             except queue.Empty:
                 if not self._running:
                     print("No longer listening to TTS message.")
@@ -114,6 +114,10 @@ class TTS_Manager(object):
             else:
                 break
 
+        username = next_message[0]
+
+        text = next_message[1]
+
         # Adjusts rate according to remaining messages in queue as well as length of message. Only for pyTTS audio.
         rate = int(math.sqrt(self._TTS_queue.qsize() + 15) * 45)
         
@@ -121,6 +125,8 @@ class TTS_Manager(object):
         self._TTS_parts = self._split_TTS_parts(text)
 
         TTS_path_list = await self._generate_TTS_parts(rate)
+
+        await self._obs_ws.update_text_detail("TTS Character Label", username) #PLACEHOLDER pls fix
 
         await self._obs_ws.tts_character_toggle("Chat Iterator", True)
 
@@ -418,7 +424,7 @@ class TTS_Manager(object):
         match self._reward_titles.get(point_reward.event.reward.title): 
             case "normal TTS":
                 print(f"TTS redemption from {point_reward.event.user_name} with text: {point_reward.event.user_input}")
-                self._TTS_queue.put(point_reward.event.user_input)
+                self._TTS_queue.put([point_reward.event.user_name, point_reward.event.user_input])
 
 
 

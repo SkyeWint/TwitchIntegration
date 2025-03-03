@@ -27,7 +27,9 @@ class OBS_WS_Connection(object):
 
         print("Connected to OBS and identified, awaiting instructions.")
 
-        # Test
+        # Test code
+
+        await self.update_text_detail("Music today is from game", "Music is from\ngame today")
 
         return True
     
@@ -35,13 +37,17 @@ class OBS_WS_Connection(object):
     # Causes a given TTS character to be moved on or off screen based on their name.
     async def tts_character_toggle(self, character_name:"str", active:"bool"):
 
-        character_name + " TTS Moving Part - Up"
-        character_name + " TTS Moving Part - Down"
 
         # Identifies current filter settings.
         if active:
             # Moves character up.
             req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "TTS", "filterName": character_name + " TTS Static Part - Up", "filterEnabled": True})
+            await self._obs_ws.call(req)
+            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "TTS", "filterName": character_name + " TTS Moving Part 1 - Up", "filterEnabled": True})
+            await self._obs_ws.call(req)
+            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "TTS", "filterName": "TTS Character Label - Up", "filterEnabled": True})
+            await self._obs_ws.call(req)
+            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "TTS", "filterName": "TTS Subtitles - Up", "filterEnabled": True})
             await self._obs_ws.call(req)
 
             await asyncio.sleep(0.3)
@@ -64,8 +70,31 @@ class OBS_WS_Connection(object):
             # Moves character down.
             req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "TTS", "filterName": character_name + " TTS Static Part - Down", "filterEnabled": True})
             await self._obs_ws.call(req)
+            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "TTS", "filterName": character_name + " TTS Moving Part 1 - Down", "filterEnabled": True})
+            await self._obs_ws.call(req)
+            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "TTS", "filterName": "TTS Character Label - Down", "filterEnabled": True})
+            await self._obs_ws.call(req)
+            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "TTS", "filterName": "TTS Subtitles - Down", "filterEnabled": True})
+            await self._obs_ws.call(req)
 
-    
+
+    # Updates the specified text source input in OBS to the specified text string.
+    async def update_text_detail(self, input_name:"str", new_text:"str") -> bool:
+
+
+        # Identifies current source settings.
+        req = simpleobsws.Request("GetInputSettings", {"inputName": input_name})
+        res = await self._obs_ws.call(req)
+
+        if res.responseData["inputSettings"]["text"] == new_text:
+            return
+        
+        inputSettings = res.responseData["inputSettings"]
+        inputSettings["text"] = new_text
+
+        req = simpleobsws.Request("SetInputSettings", {"inputName": input_name, "inputSettings": inputSettings})
+        res = await self._obs_ws.call(req)
+
 
     # Updates the music metadata filters after the text is changed in the .txt file.
     async def update_music_metadata_scroll(self, source_name:"str", speed:"int") -> bool:
@@ -80,8 +109,12 @@ class OBS_WS_Connection(object):
             await self._obs_ws.call(req)
 
         elif speed > 0 and not res.responseData["filterEnabled"]:
+
+            await asyncio.sleep(2) # Awaits to introduce delay and allow start of text to be read.
+
             req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": source_name, "filterName": "Scroll", "filterEnabled": True})
             await self._obs_ws.call(req)
+            
 
         filter_settings = res.responseData["filterSettings"]
 
@@ -98,9 +131,10 @@ class OBS_WS_Connection(object):
         res = await self._obs_ws.call(req)
 
 
-    
+
 
 if __name__ == "__main__":
+
 
     connection = OBS_WS_Connection(HTTP_Requests())
 

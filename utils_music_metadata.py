@@ -6,12 +6,8 @@ import numpy
 from connection_http_requests import HTTP_Requests
 from connection_obs_websocket import OBS_WS_Connection
 
-METADATA_FILENAME = "D:\\Streaming\\foobar2k_now_playing.txt"
-SONGNAME_FILENAME = "D:\\Streaming\\current_song_name.txt"
-ARTISTS_FILENAME = "D:\\Streaming\\current_song_artists.txt"
-SOURCE_FILENAME = "D:\\Streaming\\current_song_source.txt"
-COPYRIGHT_FILENAME = "D:\\Streaming\\current_song_copyright.txt"
 
+METADATA_FILENAME = "D:\\Streaming\\foobar2k_now_playing.txt"
 
 
 class Metadata_Manager():
@@ -41,57 +37,30 @@ class Metadata_Manager():
         await asyncio.sleep(0) # Breakpoint to allow other async functions to run.
         
         try: 
-            # Writes current song's name.
-            with open(SONGNAME_FILENAME, 'w') as file:
-                song_name = self.current_metadata[0]
-                file.write(song_name)
+            await self._obs_ws.update_text_detail("Current Song Name", self.current_metadata[0])
+            await self._obs_ws.update_text_detail("Current Song Artists", self.current_metadata[1])
+            await self._obs_ws.update_text_detail("Current Song Source", self.current_metadata[2])
+            await self._obs_ws.update_text_detail("Current Song Copyright", self.current_metadata[3][1:])
 
 
             await asyncio.sleep(0) # Breakpoint to allow other async functions to run.
-
-
-            # Writes current song's artists.
-            with open(ARTISTS_FILENAME, 'w') as file:
-                song_artists = self.current_metadata[1]
-                file.write(song_artists)
-
-
-            await asyncio.sleep(0) # Breakpoint to allow other async functions to run.
-
-
-            # Writes current song's source.
-            with open(SOURCE_FILENAME, 'w') as file:
-                song_source = self.current_metadata[2]
-                file.write(song_source)
-
-
-            await asyncio.sleep(0) # Breakpoint to allow other async functions to run.
-
-
-            # Writes current song's copyright.
-            with open(COPYRIGHT_FILENAME, 'w') as file:
-                song_copyright = self.current_metadata[3]
-                file.write(song_copyright)
-
-
-            await asyncio.sleep(2)
 
 
             # Causes metadata for each field to scroll if needed.
-            if len(song_name.strip()) > 18:
-                await self._obs_ws.update_music_metadata_scroll("Song Name", int(numpy.clip((len(song_name.strip()) * 9), 170, 350)))
+            if len(self.current_metadata[0].strip()) > 18:
+                await self._obs_ws.update_music_metadata_scroll("Current Song Name", int(numpy.clip((len(self.current_metadata[0].strip()) * 9), 170, 350)))
             else:
-                await self._obs_ws.update_music_metadata_scroll("Song Name", 0)
+                await self._obs_ws.update_music_metadata_scroll("Current Song Name", 0)
 
-            if len(song_artists.strip()) > 18:
-                await self._obs_ws.update_music_metadata_scroll("Song Artists", int(numpy.clip((len(song_name.strip()) * 9), 170, 350)))
+            if len(self.current_metadata[1].strip()) > 18:
+                await self._obs_ws.update_music_metadata_scroll("Current Song Artists", int(numpy.clip((len(self.current_metadata[1].strip()) * 9), 170, 350)))
             else:
-                await self._obs_ws.update_music_metadata_scroll("Song Artists", 0)
+                await self._obs_ws.update_music_metadata_scroll("Current Song Artists", 0)
 
-            if len(song_source.strip()) > 18:
-                await self._obs_ws.update_music_metadata_scroll("Song Source", int(numpy.clip((len(song_name.strip()) * 9), 170, 350)))
+            if len(self.current_metadata[2].strip()) > 18:
+                await self._obs_ws.update_music_metadata_scroll("Current Song Source", int(numpy.clip((len(self.current_metadata[2].strip()) * 9), 170, 350)))
             else:
-                await self._obs_ws.update_music_metadata_scroll("Song Source", 0)
+                await self._obs_ws.update_music_metadata_scroll("Current Song Source", 0)
 
         
         except Exception as e:
@@ -131,7 +100,6 @@ class Metadata_Manager():
 ## Test code
 
 if __name__ == "__main__":
-
 
     manager = Metadata_Manager()
 
