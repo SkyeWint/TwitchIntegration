@@ -133,7 +133,7 @@ class Integration(object):
 
         metadata_manager = Metadata_Manager(self.http_requests, self.obs_websocket)
         general_twitch_functions = General_Twitch_Functions(self.http_requests)
-        
+
         audio_manager = None
 
         module_list.append(metadata_manager)
@@ -142,16 +142,23 @@ class Integration(object):
 
         print("Would you like sound effects enabled during this stream? y/n   [Default: y]")
         if input() != "n":
-            audio_manager = Audio_Manager("Integration Audio Source Window")
-            module_list.append(audio_manager)
+
+            # Creates audio output window for OBS if necessary.
+            if audio_manager == None:
+                audio_manager = Audio_Manager("Integration Audio Output")
+                module_list.append(audio_manager)
+
             module_list.append(Sound_Manager(audio_manager, self.http_requests))
 
         print("Would you like Text to Speech enabled during this stream? y/n   [Default: y]")
         if input() != "n":
+            
+            # Creates audio output window for OBS if necessary.
             if audio_manager == None:
-                module_list.append(TTS_Manager(self.hotkey_manager, Audio_Manager(), self.http_requests, self.obs_websocket))
-            else:
-                module_list.append(TTS_Manager(self.hotkey_manager, audio_manager, self.http_requests, self.obs_websocket))
+                audio_manager = Audio_Manager("Integration Audio Output")
+                module_list.append(audio_manager)
+
+            module_list.append(TTS_Manager(self.hotkey_manager, audio_manager, self.http_requests, self.obs_websocket))
 
         print("Pick the integration mode from the following options:")
         print("1: None. [Default]")

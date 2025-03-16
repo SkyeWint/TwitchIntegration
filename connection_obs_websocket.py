@@ -54,17 +54,17 @@ class OBS_WS_Connection(object):
 
             # Enables audio-based movement of character's moving part. 
             # Must be enabled AFTER the move is complete (300ms) because it will snap the moving part of the character to the base coordinate without the move animation.
-            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "TTS Audio", "filterName": character_name + " TTS Audio Move 1", "filterEnabled": True})
+            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "6- TTS Audio", "filterName": character_name + " TTS Audio Move 1", "filterEnabled": True})
             await self._obs_ws.call(req)
-            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "TTS Audio", "filterName": character_name + " TTS Audio Move 2", "filterEnabled": True})
+            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "6- TTS Audio", "filterName": character_name + " TTS Audio Move 2", "filterEnabled": True})
             await self._obs_ws.call(req)
 
         else:
             # Disabled audio-based movement of head.
             # Must be disabled BEFORE the character is moved down because it will force the moving part of the character to stay at its base coordinate rather than traveling along with the rest of the character.
-            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "TTS Audio", "filterName": character_name + " TTS Audio Move 1", "filterEnabled": False})
+            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "6- TTS Audio", "filterName": character_name + " TTS Audio Move 1", "filterEnabled": False})
             await self._obs_ws.call(req)
-            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "TTS Audio", "filterName": character_name + " TTS Audio Move 2", "filterEnabled": False})
+            req = simpleobsws.Request("SetSourceFilterEnabled", {"sourceName": "6- TTS Audio", "filterName": character_name + " TTS Audio Move 2", "filterEnabled": False})
             await self._obs_ws.call(req)
 
             # Moves character down.

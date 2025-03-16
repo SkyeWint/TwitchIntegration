@@ -7,7 +7,9 @@ import string
 from syllables import estimate as estimate_syllables
 from enum import Enum
 
+
 from utils_config import get_config
+from audio_module_TTS_subtitles import generate_subtitles
 
 from twitchAPI.object.eventsub import ChannelPointsCustomRewardRedemptionAddEvent
 
@@ -64,6 +66,13 @@ class Voice_Codes(Enum):
     BULGARIAN_IVAN = "[m]"        # 78 
     ENGLISH_ZIRA = "[f]"          # 79 
 
+BRAILLE = ['⠀','⠮','⠐','⠼','⠫','⠩','⠯','⠄','⠷','⠾','⠡','⠬','⠠','⠤','⠨','⠌','⠴','⠂','⠆','⠒','⠲','⠢',
+        '⠖','⠶','⠦','⠔','⠱','⠰','⠣','⠿','⠜','⠹','⠈','⠁','⠃','⠉','⠙','⠑','⠋','⠛','⠓','⠊','⠚','⠅',
+        '⠇','⠍','⠝','⠕','⠏','⠟','⠗','⠎','⠞','⠥','⠧','⠺','⠭','⠽','⠵','⠪','⠳','⠻','⠘','⠸']
+OTHER = ["𒈙﷽♄"]
+
+BANNED_CHARACTERS = string.punctuation + "…ﯹ\u200b" + "".join(BRAILLE).join(OTHER)
+
 
 
 class TTS_Manager(object):
@@ -78,6 +87,7 @@ class TTS_Manager(object):
         self._pyTTS_baserate = 200
 
         # Sets up ability to pause without closing the function.
+        self._running = True
         self._paused = False
         hotkey_manager.create_hotkey("Pause playing TTS", "backspace+P", self._pause_unpause, force_assignment = True)
         hotkey_manager.create_hotkey("Stop TTS Button", "right shift+backspace", self._skip_current_TTS)
@@ -85,7 +95,7 @@ class TTS_Manager(object):
         # Used for generating files.
         self._file_path_base = ".\\tts\\"
 
-        self._TTS_queue = queue.Queue(0)
+        self._TTS_list = []
         self._TTS_parts = []
     
         # Sets up reward IDs for TTS redemptions. Additional TTS redemptions will be added later with fancier voices if desired.
@@ -102,24 +112,25 @@ class TTS_Manager(object):
         
         # Allows concurrent functions to execute while checking for TTS messages every 3 seconds.
         while True:
-            try:
-                next_message = self._TTS_queue.get(timeout = 0.02)
-            except queue.Empty:
-                if not self._running:
-                    print("No longer listening to TTS message.")
-                    return
-                await asyncio.sleep(3)
-            except Exception as e:
-                raise e
-            else:
+
+            if not self._running:
+                return
+
+            if len(self._TTS_list) > 0:
+                next_message = self._TTS_list.pop(0)
                 break
+            else:
+                await asyncio.sleep(1) # Prevents loop from blocking.
+                continue
+
+        print(f'next_message = {next_message}')
 
         username = next_message[0]
 
         text = next_message[1]
 
         # Adjusts rate according to remaining messages in queue as well as length of message. Only for pyTTS audio.
-        rate = int(math.sqrt(self._TTS_queue.qsize() + 15) * 45)
+        rate = int(math.sqrt(len(self._TTS_list) + 15) * 45)
         
 
         self._TTS_parts = self._split_TTS_parts(text)
@@ -133,12 +144,22 @@ class TTS_Manager(object):
         await asyncio.sleep(0.3)
 
         # Plays all TTS parts in order before getting the next message to process.
-        for TTS_Part in TTS_path_list:
-            await self._audio_player.play_TTS(TTS_Part)
+        for i, TTS_Part in enumerate(TTS_path_list):
+
+            play_part = asyncio.create_task(
+                self._audio_player.play_TTS(TTS_Part))
+
+            """ subtitles = asyncio.create_task(
+                self._generate_subtitles(self._TTS_parts[i], self._obs_ws, self._audio_player, Voice_Codes)
+                ) """
+            
+            await play_part
+            #await subtitles
 
         await self._obs_ws.tts_character_toggle("Chat Iterator", False)
 
         await asyncio.sleep(0.3)
+
 
 
     # Generates a series of TTS files based on the list of TTS parts held by the TTS_Manager object. Returns a list of file paths to the generated TTS files.
@@ -192,7 +213,7 @@ class TTS_Manager(object):
             if tts.split(maxsplit = 1)[0] not in [k.value for k in Voice_Codes]:
 
                 # Verifies that text still exists if problematic characters are all removed.
-                if tts.translate(str.maketrans('', '', string.punctuation)).strip() == "":
+                if tts.translate(str.maketrans('', '', BANNED_CHARACTERS)).strip() == "":
                     continue
 
                 # Randomly selects voice type.
@@ -225,7 +246,7 @@ class TTS_Manager(object):
 
             # Removes problematic characters and verifies that text still exists afterwards.
             
-            if tts[1].translate(str.maketrans('', '', string.punctuation)).strip() == "":
+            if tts[1].translate(str.maketrans('', '', BANNED_CHARACTERS)).strip() == "":
                 continue
 
             match tts[0]:
@@ -309,6 +330,8 @@ class TTS_Manager(object):
         syllable_count = 0
         words = text.split()
 
+        print("DEBUG: Generating syllables.")
+
         for word in words:
             syllable_count += estimate_syllables(word)
 
@@ -339,9 +362,14 @@ class TTS_Manager(object):
         file_path = self._file_path_base + filename + str(TTS_fragment_index) + ".mp3"
 
         print(f"DEBUG: Text is {text}, file path is {file_path}")
+        
+        try:
+            speech = gTTS(text = text, lang = "en", slow = False)
+            speech.save(file_path)
 
-        speech = gTTS(text = text, lang = "en", slow = False)
-        speech.save(file_path)
+        except:
+            print("Illegal character detected in TTS! Skipping.")
+            return None
 
 
         return file_path
@@ -360,12 +388,17 @@ class TTS_Manager(object):
 
         #print(f'DEBUG: Index of selected voice is {voice}')
         
-        self._pyTTS.setProperty("voice", pyTTS_voices[voice].id)
-        self._pyTTS.setProperty("rate", rate)
+        try:
+            self._pyTTS.setProperty("voice", pyTTS_voices[voice].id)
+            self._pyTTS.setProperty("rate", rate)
 
-        self._pyTTS.save_to_file(text, file_path)
-        self._pyTTS.runAndWait()
-        self._pyTTS.stop()
+            self._pyTTS.save_to_file(text, file_path)
+            self._pyTTS.runAndWait()
+            self._pyTTS.stop()
+        
+        except:
+            print("Illegal character detected in TTS! Skipping.")
+            return None
 
         print(f'DEBUG: Text generated is: {text}')
 
@@ -380,13 +413,9 @@ class TTS_Manager(object):
         self.http_requests.delete_reward(reward_title = Reward_Titles.NORMAL_TTS.value)
         
         self._running = False
-        self._TTS_queue.shutdown(immediate = True)
         self._audio_player.skip_TTS()
 
-        
-
-        # Waits for 3 seconds to allow queue to shut down properly.
-        await asyncio.sleep(3)
+        print("TTS module has terminated.")
     
 
     async def update(self) -> None:
@@ -399,38 +428,41 @@ class TTS_Manager(object):
             print("!!Attempting to create the TTS reward resulted in the following exception!!")
             print(e)
 
+        # Resets character position.
+        await self._obs_ws.tts_character_toggle("Chat Iterator", False)
+
+
         self._running = True
         while self._running:
             if not self._paused:
                 print("Waiting for next TTS message")
-                try:
-                    await self._next_TTS_message()
-                except queue.ShutDown as e:
-                    print(f"TTS Queue is shut down. Exception received: {e}")
-                    break
-                except Exception as e:
-                    raise e
+                await self._next_TTS_message()
             else:
                 # Less frequent checking occurs while paused to improve performance.
                 await asyncio.sleep(5)
+
+        
 
     
     
     # Receives channel point redemption event and directs it according to the matching point reward based on self._reward_titles.
     async def handle_point_reward(self, point_reward:"ChannelPointsCustomRewardRedemptionAddEvent") -> None:
         
+        
 
         # TTS messages are only placed on the queue. update() constantly awaits the next TTS message.
         match self._reward_titles.get(point_reward.event.reward.title): 
             case "normal TTS":
                 print(f"TTS redemption from {point_reward.event.user_name} with text: {point_reward.event.user_input}")
-                self._TTS_queue.put([point_reward.event.user_name, point_reward.event.user_input])
+                self._TTS_list.append([point_reward.event.user_name, point_reward.event.user_input])
 
 
 
     async def test(self):
 
-        test_phrase = ""
+        test_phrase = "ooooo ooooo ooooooo ooooooo ooooo oooo ooooo oooooooooo ooooooo ooooooo oooooo oooo oooooo ooooo oooo ooooooo ooooooo ooooooooo oooo oooooooo ooooooo ooooo ooooo ooo ooooo ooooooo oooooo"
+        self._TTS_list.append(["test person", test_phrase])
+        await self._next_TTS_message()
 
         pass
 

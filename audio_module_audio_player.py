@@ -24,6 +24,7 @@ class Audio_Manager():
 
         self._audio_file_exts = [".wav", ".ogg"]
     
+
     # Converts the given .mp3 into a .wav file
     def _convert_mp3_to_wav(self, file_path:"str") -> str:
 
@@ -37,6 +38,7 @@ class Audio_Manager():
         sound.export(file_path[:-4] + ".wav", format="wav")
         
         return file_path[:-4] + ".wav"
+
 
     # Plays a sound with the given file path.
     def play_sound(self, file_path:"str") -> None:
@@ -54,7 +56,6 @@ class Audio_Manager():
         sound = mixer.Sound(file_path)
 
         sound.play()
-
 
 
     # This function is awaited until TTS is no longer playing, in order to allow deletion of TTS file after playing.
@@ -79,22 +80,45 @@ class Audio_Manager():
         self._TTS_channel.play(TTS)
 
         while self._TTS_channel.get_busy():
-            await asyncio.sleep(0.7) # Provides other concurrent functions time to run while TTS messages are being played.
+            await asyncio.sleep(1) # Provides other concurrent functions time to run while TTS messages are being played.
 
         # Removes tts after it plays, in order to allow a new TTS file to be generated
         os.remove(file_path)
         return
     
+
+    # Gets the current status of the TTS channel.
+    def tts_channel_busy_status(self) -> bool:
+        return self._TTS_channel.get_busy()
+
+    
     # Skips the current TTS message being played.
     def skip_TTS(self) -> None:
         self._TTS_channel.stop()
 
+
     # Closes tkinter window properly. 
     async def terminate_module(self) -> None:
         self._window.quit()
+        print("Audio player module has terminated.")
+
 
     # Maintains tkinter window.
     async def update(self) -> None:
         print("Updating tkinter window")
         self._window.update()
         await asyncio.sleep(0.05)
+
+
+
+async def test(*args):
+    while True:
+        for test_case in args:
+            await test_case.update()
+
+
+if __name__ == "__main__":
+    test1 = Audio_Manager("test1")
+    test2 = Audio_Manager("test2")
+
+    asyncio.run(test(test1, test2))

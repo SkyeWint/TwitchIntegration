@@ -74,6 +74,8 @@ class Metadata_Manager():
     async def terminate_module(self) -> None:
         self._running = False
 
+        print("Music metadata splitter utility has terminated.")
+
 
     async def update(self) -> None:
         
