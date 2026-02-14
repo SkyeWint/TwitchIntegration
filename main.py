@@ -119,10 +119,15 @@ class Integration(object):
 
         self.http_requests.send_chat_announcement("The integration code is no longer running! skyewiGerald")
 
+        print("Terminating connection to Twitch...")
         self.twitch_connection.stop_running()
 
+        print("Terminating connection to OBS...")
+        await self.obs_websocket.terminate_module()
 
         print("All tasks should be terminated now. Closing program.")
+
+        exit()
 
 
     # Requests input on list of modules to run in the integration program, initializes them, then returns the list.

@@ -5,7 +5,7 @@ from twitchAPI.helper import first
 from twitchAPI.oauth import UserAuthenticationStorageHelper
 from twitchAPI.type import AuthScope
 from twitchAPI.eventsub.websocket import EventSubWebsocket
-from twitchAPI.object.eventsub import ChannelChatMessageEvent, ChannelPointsCustomRewardRedemptionAddEvent, ChannelRaidEvent
+from twitchAPI.object.eventsub import ChannelChatMessageEvent, ChannelPointsCustomRewardRedemptionAddEvent, ChannelRaidEvent, ChannelAdBreakBeginEvent
 
 
 #### General imports.
@@ -26,6 +26,7 @@ class Twitch_Connection():
         self.chat_message_callbacks = set()
         self.point_reward_redemption_callbacks = set()
         self.raid_event_callbacks = set()
+        self.ad_break_event_callbacks = set()
 
         # Cycles through all modules passed to the twitch connection on initialization and adds them to the lists.
         for module in module_list:
@@ -39,6 +40,9 @@ class Twitch_Connection():
 
             if callable(getattr(module, "handle_raid", None)):
                 self.raid_event_callbacks.add(module.handle_raid)
+
+            if callable(getattr(module, "handle_ad_break", None)):
+                self.ad_break_event_callbacks.add(module.handle_ad_break)
 
 
 
@@ -73,6 +77,12 @@ class Twitch_Connection():
     async def _on_channel_raid(self, data:"ChannelRaidEvent") -> None:
 
         for callback in self.raid_event_callbacks:
+            await callback(data)
+
+    
+    async def _on_channel_ad_break_begin(self, data:"ChannelAdBreakBeginEvent") -> None:
+
+        for callback in self.ad_break_event_callbacks:
             await callback(data)
 
 
@@ -130,6 +140,7 @@ class Twitch_Connection():
         await eventsub.listen_channel_chat_message(self.user.id, self.user.id, self._on_chat_message)
         await eventsub.listen_channel_points_custom_reward_redemption_add(self.user.id, self._on_point_redemption)
         await eventsub.listen_channel_raid(self._on_channel_raid, to_broadcaster_user_id = self.user.id)
+        await eventsub.listen_channel_ad_break_begin(self.user.id, self._on_channel_ad_break_begin)
 
 
         while self.running:

@@ -6,7 +6,7 @@ from enum import Enum
 from utils_hotkey_manager import Hotkey_Manager
 from audio_module_audio_player import Audio_Manager
 from connection_http_requests import HTTP_Requests
-from twitchAPI.object.eventsub import ChannelChatMessageEvent, ChannelPointsCustomRewardRedemptionAddEvent, ChannelRaidEvent
+from twitchAPI.object.eventsub import ChannelChatMessageEvent, ChannelPointsCustomRewardRedemptionAddEvent, ChannelRaidEvent, ChannelAdBreakBeginEvent
 
 
 class Reward_Titles(Enum):
@@ -113,8 +113,6 @@ class General_Twitch_Functions():
 
 
 
-
-
     # Receives a raid event and responds appropriately, by shouting out the raider and thanking them for the raid.
     async def handle_raid(self, raid_info:"ChannelRaidEvent") -> None:
 
@@ -127,5 +125,18 @@ class General_Twitch_Functions():
             channel_info = self.http_requests.get_channel_info(raid_info.event.from_broadcaster_user_id)
 
             self.http_requests.send_chat_message(f"{raid_info.event.from_broadcaster_user_name}! Thank you for dropping off your crew of {raid_info.event.viewers} people here! I hope that you had fun playing {channel_info['game_name']}!")
+
+        return
+    
+
+
+    # Receives an ad break event and responds appropriately, by shouting out the raider and thanking them for the raid.
+    async def handle_ad_break(self, ad_break_info:"ChannelAdBreakBeginEvent") -> None:
+
+        self.http_requests.send_chat_announcement(f"THE AIDS ARE COMING! They will last for {ad_break_info.event.duration_seconds} seconds! Everybody panic!")
+
+        await asyncio.sleep(0.2)
+
+        self.http_requests.send_chat_message(f"Actually, don't panic. The ads are just to prevent prerolls from slapping people in the face when they join. If you would like to skip ads, feel free to subscribe! If you have Amazon Prime, you can use that to sub for free, too.")
 
         return

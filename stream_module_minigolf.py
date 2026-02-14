@@ -116,7 +116,7 @@ class Minigolf_Manager():
         if self._power_total >= self._power_limit and y > 0:
             self._vectors[1] = 0
         
-        pydirectinput.moveRel(x, y, duration = 0.02, relative = True)
+        pydirectinput.moveRel(x, y, duration = 0.01, relative = True)
 
         # Total power quantity is actively tracked each time the mouse is moved.
         if not self._aiming:
@@ -170,13 +170,12 @@ class Minigolf_Manager():
                 
             else:
                 self._move_mouse(self._vectors[0], self._vectors[1])
-
-                await asyncio.sleep(0.02)
+                await asyncio.sleep(0.01)
     
 
 
     # Receives chat message event and directs it according to the matching command based on self._chat_commands.
-    async def _handle_chat_message(self, chat_message:"ChannelChatMessageEvent"):
+    async def handle_chat_message(self, chat_message:"ChannelChatMessageEvent"):
 
         
         # Normalizes username to lowercase and removes punctuation for flexible command matching.
@@ -190,16 +189,16 @@ class Minigolf_Manager():
         if self._aiming:
             match self._chat_commands.get(text):
                 case "up":
-                    self._change_vectors(0, 4)
+                    self._change_vectors(0, 3)
 
                 case "down":
-                    self._change_vectors(0, -4)
+                    self._change_vectors(0, -3)
 
                 case "left":
-                    self._change_vectors(-4, 0)
+                    self._change_vectors(-3, 0)
 
                 case "right":
-                    self._change_vectors(4, 0)
+                    self._change_vectors(3, 0)
                 
                 case "lock in":
                     self._lock_in_aim()
@@ -220,10 +219,10 @@ class Minigolf_Manager():
         else:
             match self._chat_commands.get(text):
                 case "more":
-                    self._change_vectors(0, 4)
+                    self._change_vectors(0, 3)
 
                 case "less":
-                    self._change_vectors(0, -4)
+                    self._change_vectors(0, -3)
 
                 case "slightly more":
                     if self._slight_power_adjustment_counter < self._slight_power_adjustment_limit:

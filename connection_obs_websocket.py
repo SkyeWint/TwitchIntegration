@@ -131,6 +131,10 @@ class OBS_WS_Connection(object):
         res = await self._obs_ws.call(req)
 
 
+    async def terminate_module(self) -> None:
+        await self._obs_ws.disconnect()
+
+
 
 
 if __name__ == "__main__":
