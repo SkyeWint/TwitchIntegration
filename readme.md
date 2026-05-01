@@ -20,7 +20,7 @@ To run this code, you need to install Python 3.13.0 from the [Python website](ht
 - python -m pip install pygame  
 - python -m pip install tk  
 - python -m pip install gtts  
-- python -m pip install pyttsx3  
+- python -m pip install --force-reinstall -v "pyttsx3==2.98"  
 - python -m pip install syllables  
 - python -m pip install pydub  
 - python -m pip install audioop-lts  

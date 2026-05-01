@@ -36,7 +36,7 @@ class OBS_WS_Connection(object):
 
     # Causes a given TTS character to be moved on or off screen based on their name.
     async def tts_character_toggle(self, character_name:"str", active:"bool"):
-
+        print("Toggling TTS character")
 
         # Identifies current filter settings.
         if active:

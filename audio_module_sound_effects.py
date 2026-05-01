@@ -89,7 +89,8 @@ class Sound_Manager(object):
         if text != self._last_message:
             self.play_random_sound_effect(self._chat_commands.get(text))
 
-
+        
+        # Special response to "bap" messages
         if text == "bap":
             self.http_requests.send_chat_message("Bop!", chat_message.event.message_id)
 

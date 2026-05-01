@@ -105,7 +105,7 @@ class TTS_Manager(object):
     # Gets the next TTS message from the queue and processes it while TTS is not paused.
     async def _next_TTS_message(self) -> None:
         
-        # Allows concurrent functions to execute while checking for TTS messages every 3 seconds.
+        # Allows concurrent functions to execute while checking for TTS messages every 1 second.
         while True:
 
             if not self._running:
@@ -232,8 +232,8 @@ class TTS_Manager(object):
                 TTS_path_list.append(TTS_file_path)
 
                 continue
-                
-                
+            
+            
 
             # If a voice code does exist at the start of the string, the voice code is split and used to identify the voice to use, while the remainder of the string is passed to TTS generation.
             tts = tts.split(maxsplit = 1)
@@ -352,6 +352,7 @@ class TTS_Manager(object):
     def generate_pyTTS(self, text:"str", voice:"int" = -1, rate:"int" = 200, filename:"str" = "speech", TTS_fragment_index:"int" = 1) -> str:
         file_path = self._file_path_base + filename + str(TTS_fragment_index) + ".wav"
         
+
         print(f"DEBUG: Text is {text}")
 
         pyTTS_voices = self._pyTTS.getProperty('voices')
@@ -359,18 +360,20 @@ class TTS_Manager(object):
         if voice < -1:
             voice = random.randint(0, len(pyTTS_voices) - 1)
 
-        #print(f'DEBUG: Index of selected voice is {voice}')
+        print(f'DEBUG: Index of selected voice is {voice}')
         
         try:
-            self._pyTTS.setProperty("voice", pyTTS_voices[voice].id)
+            #self._pyTTS.setProperty("voice", pyTTS_voices[voice].id)
+            self._pyTTS.setProperty("voice", 1) # Temporarily ONLY setting voice to male
             self._pyTTS.setProperty("rate", rate)
 
             self._pyTTS.save_to_file(text, file_path)
             self._pyTTS.runAndWait()
             self._pyTTS.stop()
         
-        except:
+        except Exception as e:
             print("Illegal character detected in TTS! Skipping.")
+            print(e)
             return None
 
         print(f'DEBUG: Text generated is: {text}')

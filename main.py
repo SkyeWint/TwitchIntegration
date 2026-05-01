@@ -65,7 +65,7 @@ class Integration(object):
 
         self.http_requests.init_user_id()
 
-        self.http_requests.send_chat_announcement("The integration code is now connected and running! TTS, sound effects, and other fun things will now work! skyewiGormsip")
+        self.http_requests.send_chat_announcement("The integration code is now connected and running! TTS, sound effects, and other fun things should (hopefully) now work! skyewiGormsip")
 
         # Adds all selected stream module update() functions and websocket connection to Task Manager to execute in concurrent loops. Maintains in a loop until self.tg no longer has tasks to manage.
         #try:
