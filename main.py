@@ -92,7 +92,6 @@ class Integration(object):
 
             #self.http_requests.send_chat_message("Something went wrong! Please tell Skye to check the exception log! skyewiPlank")
 
-        exit()
 
 
     # Only to be called by hotkey. Tells the program to stop running, obviously.
@@ -127,7 +126,6 @@ class Integration(object):
 
         print("All tasks should be terminated now. Closing program.")
 
-        exit()
 
 
     # Requests input on list of modules to run in the integration program, initializes them, then returns the list.
@@ -213,4 +211,10 @@ if __name__ == "__main__":
     program = Integration()
 
     # Initiates main loop after other initialization is complete.
-    asyncio.run(program.main())
+    try:
+        asyncio.run(program.main())
+    except (Exception, KeyboardInterrupt) as e:
+        print("Error", str(e))
+        exit()
+
+    exit()

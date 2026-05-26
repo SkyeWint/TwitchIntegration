@@ -8,7 +8,6 @@ from syllables import estimate as estimate_syllables
 from enum import Enum
 
 
-from utils_config import get_config
 from audio_module_TTS_subtitles import generate_subtitles
 
 from twitchAPI.object.eventsub import ChannelPointsCustomRewardRedemptionAddEvent
@@ -40,31 +39,31 @@ class Voice_Codes(Enum):
 
     RANDOM = "[r]"
 
-    ENGLISH_DAVID = "[david]"         # 0  
-    GERMAN_KARSTEN = "[m]"        # 5  
-    GERMAN_KATJA = "[f]"          # 7  
-    ENGLISH_CATHERINE = "[f]"     # 10 
-    ENGLISH_JAMES = "[m]"         # 11 
-    ENGLISH_MATILDA = "[f]"       # 12 
-    ENGLISH_EVA_CA = "[f]"        # 13 
-    ENGLISH_SUSAN = "[f]"         # 17 
-    ENGLISH_SEAN = "[m]"          # 18 
-    ENGLISH_HEERA = "[f]"         # 19 
-    ENGLISH_RAVI = "[ravi]"     # 20 
-    ENGLISH_EVA_US = "[f]"        # 21 
-    SPANISH_LAURA = "[laura]"   # 24 
-    FRENCH_NATHALIE = "[f]"       # 31 
-    FRENCH_GUILLAUME = "[m]"      # 32 
-    FRENCH_JULIE = "[f]"          # 34 
-    CROATIAN_MATEJ = "[m]"        # 39 
-    ITALIAN_COSIMO = "[cosimo]" # 42 
-    JAPANESE_SAYAKA = "[f]"       # 47 
-    MALAY_RIZWAN = "[rizwan]"   # 49 
-    ROMANIAN_ANDREI = "[m]"       # 58
-    SLOVAK_FILIP = "[filip]"    # 61 
-    ENGLISH_HAZEL = "[f]"         # 77 
-    BULGARIAN_IVAN = "[m]"        # 78 
-    ENGLISH_ZIRA = "[f]"          # 79 
+    ENGLISH_DAVID = "[david]"     # 0  
+    GERMAN_KARSTEN = "[m]"        # 7  
+    GERMAN_KATJA = "[f]"          # 9  
+    ENGLISH_CATHERINE = "[f]"     # 12 
+    ENGLISH_JAMES = "[m]"         # 13 
+    ENGLISH_MATILDA = "[f]"       # 14 
+    ENGLISH_EVA_CA = "[f]"        # 15 
+    ENGLISH_SUSAN = "[f]"         # 20 
+    ENGLISH_SEAN = "[m]"          # 21 
+    ENGLISH_HEERA = "[f]"         # 22 
+    ENGLISH_RAVI = "[ravi]"       # 23 
+    ENGLISH_EVA_US = "[f]"        # 25 
+    SPANISH_LAURA = "[laura]"     # 29 
+    FRENCH_NATHALIE = "[f]"       # 36 
+    FRENCH_GUILLAUME = "[m]"      # 37 
+    FRENCH_JULIE = "[f]"          # 39 
+    CROATIAN_MATEJ = "[m]"        # 44 
+    ITALIAN_COSIMO = "[cosimo]"   # 47 
+    JAPANESE_SAYAKA = "[f]"       # 52 
+    MALAY_RIZWAN = "[rizwan]"     # 54 
+    ROMANIAN_ANDREI = "[m]"       # 63
+    SLOVAK_FILIP = "[filip]"      # 66 
+    ENGLISH_HAZEL = "[f]"         # 82 
+    BULGARIAN_IVAN = "[m]"        # 2 
+    ENGLISH_ZIRA = "[f]"          # 84 
 
 ALLOWED_CHARACTER_REGEX = '[^[:alnum:][:punct:]]'
 
@@ -172,28 +171,27 @@ class TTS_Manager(object):
         
         TTS_path_list = []
         pytts_masc_voices = {
-            "English_David": 0, 
-            "German_Karsten": 5, 
-            "English_James": 11, 
-            "English_Sean": 18, 
-            "French_Guillame": 32, 
-            "Croatian_Matej": 39, 
-            "Romanian_Andrei": 58, 
-            "Bulgarian_Ivan": 78
+            "German_Karsten": 7, 
+            "English_James": 13, 
+            "English_Sean": 21, 
+            "French_Guillame": 37, 
+            "Croatian_Matej": 44, 
+            "Romanian_Andrei": 63, 
+            "Bulgarian_Ivan": 2
         }
         pytts_fem_voices = {
-            "German_Katja": 7, 
-            "English_Catherine": 10, 
-            "English_Matilda": 12, 
-            "English_Eva_CA": 13,
-            "English_Susan": 17, 
-            "English_Heera": 19, 
-            "English_Eva_US": 21, 
-            "French_Nathalie": 31, 
-            "French_Julie": 34, 
-            "Japanese_Sayaka": 47, 
-            "English_Hazel": 77, 
-            "English_Zira": 79
+            "German_Katja": 9, 
+            "English_Catherine": 12, 
+            "English_Matilda": 14, 
+            "English_Eva_CA": 15,
+            "English_Susan": 20, 
+            "English_Heera": 22, 
+            "English_Eva_US": 25, 
+            "French_Nathalie": 36, 
+            "French_Julie": 39, 
+            "Japanese_Sayaka": 52, 
+            "English_Hazel": 82, 
+            "English_Zira": 84
         }
 
         #print(f"DEBUG: TTS_parts = '{self._TTS_parts}'")
@@ -269,19 +267,19 @@ class TTS_Manager(object):
                     TTS_file_path = self.generate_pyTTS(tts[1], voice = 0, rate = pyTTS_rate, TTS_fragment_index=i)
 
                 case Voice_Codes.ENGLISH_RAVI.value:
-                    TTS_file_path = self.generate_pyTTS(tts[1], voice = 20, rate = pyTTS_rate, TTS_fragment_index=i)
+                    TTS_file_path = self.generate_pyTTS(tts[1], voice = 23, rate = pyTTS_rate, TTS_fragment_index=i)
 
                 case Voice_Codes.SPANISH_LAURA.value:
-                    TTS_file_path = self.generate_pyTTS(tts[1], voice = 24, rate = pyTTS_rate, TTS_fragment_index=i)
+                    TTS_file_path = self.generate_pyTTS(tts[1], voice = 29, rate = pyTTS_rate, TTS_fragment_index=i)
 
                 case Voice_Codes.ITALIAN_COSIMO.value:
-                    TTS_file_path = self.generate_pyTTS(tts[1], voice = 42, rate = pyTTS_rate, TTS_fragment_index=i)
+                    TTS_file_path = self.generate_pyTTS(tts[1], voice = 47, rate = pyTTS_rate, TTS_fragment_index=i)
 
                 case Voice_Codes.MALAY_RIZWAN.value:
-                    TTS_file_path = self.generate_pyTTS(tts[1], voice = 49, rate = pyTTS_rate, TTS_fragment_index=i)
+                    TTS_file_path = self.generate_pyTTS(tts[1], voice = 54, rate = pyTTS_rate, TTS_fragment_index=i)
 
                 case Voice_Codes.SLOVAK_FILIP.value:
-                    TTS_file_path = self.generate_pyTTS(tts[1], voice = 61, rate = pyTTS_rate, TTS_fragment_index=i)
+                    TTS_file_path = self.generate_pyTTS(tts[1], voice = 66, rate = pyTTS_rate, TTS_fragment_index=i)
 
             print(f"DEBUG: File path generated: {TTS_file_path}")
 
@@ -360,11 +358,15 @@ class TTS_Manager(object):
         if voice < -1:
             voice = random.randint(0, len(pyTTS_voices) - 1)
 
-        print(f'DEBUG: Index of selected voice is {voice}')
+        # For checking available voices
+        """ index = 0
+        for pyTTS_voice in pyTTS_voices:
+            print(f'index-> {index} -- {pyTTS_voice.name}')
+            index +=1 """
         
         try:
-            #self._pyTTS.setProperty("voice", pyTTS_voices[voice].id)
-            self._pyTTS.setProperty("voice", 1) # Temporarily ONLY setting voice to male
+            self._pyTTS.setProperty("voice", pyTTS_voices[voice].id)
+            #self._pyTTS.setProperty("voice", pyTTS_voices[0].id) # Temporarily ONLY setting voice to male
             self._pyTTS.setProperty("rate", rate)
 
             self._pyTTS.save_to_file(text, file_path)
@@ -436,7 +438,8 @@ class TTS_Manager(object):
 
     async def test(self):
 
-        test_phrase = "ooooo ooooo ooooooo ooooooo ooooo oooo ooooo oooooooooo ooooooo ooooooo oooooo oooo oooooo ooooo oooo ooooooo ooooooo ooooooooo oooo oooooooo ooooooo ooooo ooooo ooo ooooo ooooooo oooooo"
+        test_phrase = "This is a test phrase. ABCDEFG. Hello Skye!"
+
         self._TTS_list.append(["test person", test_phrase])
         await self._next_TTS_message()
 

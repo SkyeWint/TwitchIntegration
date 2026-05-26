@@ -1,6 +1,7 @@
 import os
 import string
 import random
+from enum import Enum
 
 from twitchAPI.object.eventsub import ChannelChatMessageEvent
 
@@ -9,7 +10,17 @@ from audio_module_audio_player import Audio_Manager
 from connection_http_requests import HTTP_Requests
 
 
-SOUND_EFFECT_FOLDER_PATH_BASE = ".\\sound_effects\\"
+######### Enum and Constants List #########
+
+FREE_SOUND_EFFECT_FOLDER_PATH_BASE = ".\\free_sound_effects\\"
+
+
+# If you want different titles for the point rewards set up by this code, specify them here.
+class Reward_Titles(Enum):
+
+    BABY = "" 
+
+
 
 
 class Sound_Manager(object):
@@ -23,15 +34,31 @@ class Sound_Manager(object):
 
         self._chat_commands = {}
 
-        # Creates list of commands based on sound effect folder names.
-        sound_effect_commands = os.listdir(SOUND_EFFECT_FOLDER_PATH_BASE)
+        """ # Creates list of commands based on sound effect folder names.
+        free_sound_effect_commands = os.listdir(FREE_SOUND_EFFECT_FOLDER_PATH_BASE)
 
-        for command in sound_effect_commands:
+        for command in free_sound_effect_commands:
             self._chat_commands.update(dict.fromkeys([command], command))
 
         # Adds aliases to commands if desired.
         self._chat_commands.update(dict.fromkeys(["myar", "mrow", "mrowr"], "meow"))
-        self._chat_commands.update(dict.fromkeys(["bap", "bop"], "bonk"))
+        self._chat_commands.update(dict.fromkeys(["bap", "bop"], "bonk")) """
+
+
+        # Sets up reward IDs for TTS redemptions. Additional TTS redemptions will be added later with fancier voices if desired.
+        self._reward_titles = {}
+
+        # The values in [] brackets MUST match the point rewards on your channel, whichever is changed.
+        self._reward_titles.update(dict.fromkeys([Reward_Titles.NORMAL_TTS.value], "normal TTS"))
+
+
+        """ # Sound Effect Rewards
+        try:
+            self.http_requests.create_reward(Reward_Titles.NORMAL_TTS.value, user_input_required= True, background_color = "#392e5c", prompt = "Play text to speech! You can pick voices by typing a voice code before text, even in the middle of a sentence. You can see the voice codes by typing !voicecodes. For example: \"This is [m] a message.\"")
+
+        except Exception as e:
+            print("!!Attempting to create the TTS reward resulted in the following exception!!")
+            print(e) """
 
 
     
@@ -69,10 +96,10 @@ class Sound_Manager(object):
 
 
     # Plays a sound from the given sound effect folder, if the folder exists.
-    def play_random_sound_effect(self, folder_name):
+    def play_random_sound_effect(self, folder_name, folder_path_base):
 
-        if folder_name in os.listdir(SOUND_EFFECT_FOLDER_PATH_BASE): 
-            folder_path = SOUND_EFFECT_FOLDER_PATH_BASE + f"{self._chat_commands.get(folder_name)}\\"
+        if folder_name in os.listdir(folder_path_base): 
+            folder_path = folder_path_base + f"{self._chat_commands.get(folder_name)}\\"
 
             self._audio_player.play_sound(self._select_sound_effect(folder_path))
 
@@ -87,13 +114,17 @@ class Sound_Manager(object):
         text.translate(str.maketrans('', '', string.punctuation))
 
         if text != self._last_message:
-            self.play_random_sound_effect(self._chat_commands.get(text))
 
-        
-        # Special response to "bap" messages
-        if text == "bap":
-            self.http_requests.send_chat_message("Bop!", chat_message.event.message_id)
+            # Special response to "bap" messages
+            if text == "bap":
+                self.http_requests.send_chat_message("Bop!", chat_message.event.message_id)
 
-        
+
+            # TODO: Use command dictionary defined within init to replace commands if appropriate.
+
+
+            # Plays sound effect if a match is identified
+            self.play_random_sound_effect(self._chat_commands.get(text), FREE_SOUND_EFFECT_FOLDER_PATH_BASE)
+
         self._last_message = text
 
