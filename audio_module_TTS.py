@@ -420,8 +420,6 @@ class TTS_Manager(object):
                 await asyncio.sleep(5)
 
         
-
-    
     
     # Receives channel point redemption event and directs it according to the matching point reward based on self._reward_titles.
     async def handle_point_reward(self, point_reward:"ChannelPointsCustomRewardRedemptionAddEvent") -> None:
@@ -433,6 +431,7 @@ class TTS_Manager(object):
             case "normal TTS":
                 print(f"TTS redemption from {point_reward.event.user_name} with text: {point_reward.event.user_input}")
                 self._TTS_list.append([point_reward.event.user_name, point_reward.event.user_input])
+
 
 
 

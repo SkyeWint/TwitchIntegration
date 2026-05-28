@@ -214,7 +214,7 @@ if __name__ == "__main__":
     try:
         asyncio.run(program.main())
     except (Exception, KeyboardInterrupt) as e:
-        print("Error", str(e))
+        print("Error: ", str(e))
         exit()
 
     exit()
