@@ -29,7 +29,7 @@ class OBS_WS_Connection(object):
 
         # Test code
 
-        await self.update_text_detail("Music today is from game", "Music is from\ngame today")
+        await self.update_text_detail("TTS Subtitles", "\u200b")
 
         return True
     
@@ -86,11 +86,15 @@ class OBS_WS_Connection(object):
         req = simpleobsws.Request("GetInputSettings", {"inputName": input_name})
         res = await self._obs_ws.call(req)
 
+        print(f"\n\nInput settings received from OBS: \n\n{res.responseData["inputSettings"]}")
+
         if res.responseData["inputSettings"]["text"] == new_text:
             return
         
         inputSettings = res.responseData["inputSettings"]
         inputSettings["text"] = new_text
+
+        print(f"\n\nInput settings after update, to be sent to OBS: \n\n{inputSettings}")
 
         req = simpleobsws.Request("SetInputSettings", {"inputName": input_name, "inputSettings": inputSettings})
         res = await self._obs_ws.call(req)
@@ -143,3 +147,5 @@ if __name__ == "__main__":
     connection = OBS_WS_Connection(HTTP_Requests())
 
     asyncio.run(connection.init_connection())
+
+    print("Completed test run!")

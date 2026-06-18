@@ -132,7 +132,8 @@ class HTTP_Requests(object):
                 user_input_required:"bool" = False, # If True, user must input text when redeeming the reward.
                 max_per_stream:"int" = 0, # Value must be positive if specified.
                 max_per_user_per_stream:"int" = 0, # Value must be positive if specified.
-                global_cooldown_seconds:"int" = 0 # Value must be positive if specified.
+                global_cooldown_seconds:"int" = 0, # Value must be positive if specified.
+                skip_request_queue:"bool" = True # Specify False if reward redemption should be refundable.
                 ) -> "str": # Returns string with the created reward's ID.
 
 
@@ -163,6 +164,9 @@ class HTTP_Requests(object):
         if global_cooldown_seconds > 0:
             payload.update(dict.fromkeys(["is_global_cooldown_enabled"], True))
             payload.update(dict.fromkeys(["global_cooldown_seconds"], global_cooldown_seconds))
+
+        if skip_request_queue != None:
+            payload.update(dict.fromkeys(["should_redemptions_skip_request_queue"], skip_request_queue))
 
 
         res = requests.post(url = f"{_TWITCH_URI.REWARD_ENDPOINT.value}{query}", data = json.dumps(payload), headers = self.get_http_request_headers(True))

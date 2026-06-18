@@ -1,6 +1,7 @@
 import asyncio
 from enum import Enum
 from syllables import estimate as estimate_syllables
+import re
 
 
 
@@ -9,10 +10,14 @@ from connection_obs_websocket import OBS_WS_Connection
 from audio_module_audio_player import Audio_Manager
 
 
+DISALLOWED_CHARACTER_REGEX = '[^[:alnum:][:punct:]]'
+
+
 
 async def generate_subtitles(rate:"int", text:"list", obs_ws:"OBS_WS_Connection", audio_player:"Audio_Manager", voice_codes:"Enum"):
     
     try:
+
 
         text_words = text.split()
 
@@ -33,7 +38,7 @@ async def generate_subtitles(rate:"int", text:"list", obs_ws:"OBS_WS_Connection"
         for word in text_words:
             total_characters += len(word) + 1
 
-        
+    
         if total_characters > character_limit:
             target_subtitle_length = total_characters / (int(total_characters / character_limit) + 1)
         else:
@@ -53,13 +58,19 @@ async def generate_subtitles(rate:"int", text:"list", obs_ws:"OBS_WS_Connection"
             else:
                 await obs_ws.update_text_detail("TTS Subtitles", subtitle)
 
+
                 sleep_time = estimate_total_syllables(subtitle) / (rate / 40)
-                print(f"Waiting for {sleep_time} seconds before changing subtitles again.")
+
                 await asyncio.sleep(sleep_time)
 
                 subtitle = word + " "
 
+
+        print(f"Subtitle after all updates is {subtitle}, now updating OBS subtitle.")
+
         await obs_ws.update_text_detail("TTS Subtitles", subtitle)
+
+        print("OBS subtitle updated.")
             
 
 
